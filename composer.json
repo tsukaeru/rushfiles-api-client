@@ -1,0 +1,18 @@
+{
+    "name": "tsukaeru.net/rf-client",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Wiktor Klonowski",
+            "email": "wklonowski@tsukaeru.net"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Tsukaeru\\RushFiles\\": "src"
+        }
+    },
+    "require": {
+        "php": ">=7.1"
+    }
+}
