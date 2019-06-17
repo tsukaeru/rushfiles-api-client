@@ -2,12 +2,19 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Psr\Http\Client\ClientInterface;
+use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use GuzzleHttp\Psr7\Request;
 use function GuzzleHttp\json_decode;
+use Ramsey\Uuid\Uuid;
+use function GuzzleHttp\json_encode;
 
 class Client
 {
+    /**
+     * Namespace used for generating device ids from device name.
+     */
+    const CLIENT_NAMESPACE_UUID = '8737930c-8f13-11e9-910b-7e7a262c9c6d';
+
     /**
      * @var Psr\Http\Client\ClientInterface
      */
@@ -16,11 +23,46 @@ class Client
     /**
      * @var string
      */
-    protected $deviceName = 'tsukaeru.net/rushfiles';
+    protected $deviceName;
 
-    public function __construct(ClientInterface $client)
+    /**
+     * @var string
+     */
+    private $deviceOS;
+
+    /**
+     * @var string
+     */
+    private $deviceId;
+
+    private $defaultHeaders = [
+        'Accept' => 'application/json',
+        'Content-Type' => 'application/json',
+    ];
+
+    public function __construct(HttpClientInterface $client, string $deviceName = 'Tsukaeru\RushFiles')
     {
         $this->client = $client;
+        $this->deviceName = $deviceName;
+        $this->deviceId = Uuid::uuid5(self::CLIENT_NAMESPACE_UUID, $this->deviceName);
+        $this->deviceOS = php_uname('s') . ' ' . php_uname('');
+    }
+
+    /**
+     * Automates getting user's domain, registering device and retrieving tokens,
+     * and packs everything into User object.
+     */
+    public function Login(string $username, string $password, string $domain = null) : User
+    {
+        if (!is_string($domain)) {
+            $domain = $this->GetUserDomain($username);
+        }
+
+        $this->RegisterDevice($username, $password, $domain);
+
+        $tokens = $this->GetDomainTokens($username, $password, $domain);
+
+        return new User($username, $tokens, $this);
     }
 
     public function GetUserDomain(string $username) : string

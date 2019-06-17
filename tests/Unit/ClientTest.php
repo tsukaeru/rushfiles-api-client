@@ -112,6 +112,51 @@ class ClientTest extends TestCase
         $client->GetDomainTokens('admin@example.com', 'password', 'cloudfile.jp');
     }
 
+    public function testLoginWithoutDomain()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $mock->append(new Response(200, [], 'admin@example.com,cloudfile.jp'));
+        $mock->append(new Response(201, [], json_encode(['Message' => 'Ok.'])));
+        $mock->append(new Response(200, [], json_encode([
+            'Message' => 'Ok.',
+            'Data' => [
+                'DomainTokens' => [
+                    'cloudfile.jp' => 'token',
+                ],
+            ],
+        ])));
+
+        $login = $client->Login('admin@example.com', 'password');
+
+        $this->assertInstanceOf(User::class, $login);
+        $this->assertEquals('admin@example.com', $login->getUsername());
+        $this->assertEquals(['cloudfile.jp'], $login->getDomains()->toArray());
+    }
+
+    public function testLoginWithDomain()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $mock->append(new Response(201, [], json_encode(['Message' => 'Ok.'])));
+        $mock->append(new Response(200, [], json_encode([
+            'Message' => 'Ok.',
+            'Data' => [
+                'DomainTokens' => [
+                    'cloudfile.jp' => 'token',
+                ],
+            ],
+        ])));
+
+        $login = $client->Login('admin@example.com', 'password', 'cloudfile.jp');
+
+        $this->assertInstanceOf(User::class, $login);
+        $this->assertEquals('admin@example.com', $login->getUsername());
+        $this->assertEquals(['cloudfile.jp'], $login->getDomains()->toArray());
+    }
+
     public function testGetUserShares()
     {
         $history = [];
