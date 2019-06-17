@@ -23,46 +23,124 @@ class Client
         $this->client = $client;
     }
 
-    public function Login(string $username, string $password, string $domain)
+    public function GetUserDomain(string $username) : string
     {
-        $headers = [
-            'useremail' => $username,
-            'password2' => base64_encode($password),
-            'devicename' => 'unknown',
+        $request = new Request('GET', $this->UserDomainURL($username));
+        $response = $this->client->sendRequest($request);
+        list(,$domain) = explode(',', $response->getBody());
+
+        return $domain;
+    }
+
+    /**
+     * RegisterDevice must be called at least once for every username/deviceId combination.
+     * Subsequent calls won't cause errors so it can be called every time, or invocation
+     * can be remembered not to make needless calls.
+     * This client does not keep track of registration on itself.
+     */
+    public function RegisterDevice(string $username, string $password, string $domain) : void
+    {
+        $deviceAssociation = [
+            'UserName' => $username,
+            'Password' => $password,
+            'DeviceName' => $this->deviceName,
+            'DeviceOs' => $this->deviceOS,
+            'DeviceType' => 8, // unknown
         ];
 
-        $request = new Request('GET', $this->GetLoginURL($domain), $headers);
+        $request = new Request('PUT', $this->RegisterDeviceURL($domain, $this->deviceId), $this->defaultHeaders, json_encode($deviceAssociation));
 
         $response = $this->client->sendRequest($request);
 
         $data = json_decode($response->getBody());
 
-        $token = $data->PrimaryUserDomain->UserDomainToken ?? null;
+        if ($data->Message !== "Ok.") {
+            throw new \Exception("Could not register device: " . $data->Message);
+        }
+    }
 
-        if ($token === null)
-            throw new \Exception("Login failed with error code: {$data->ErrorCode}");
-
-        $request = new Request('GET', $this->GetGatewayLoginURL($domain, $username, $token));
+    public function GetUserShares(string $username, string $token, string $domain) : iterable
+    {
+        $request = new Request('GET', $this->UsersShareURL($domain, $username), $this->AuthHeaders($token));
 
         $response = $this->client->sendRequest($request);
 
-        $data = json_decode($response->getBody());
+        $data = json_decode($response->getBody(), true);
 
-        $filecaches = $data->FilecacheUrls ?? null;
+        if ($data['Message'] !== "Ok.")
+            throw new \Exception("Could not retrieve user's shares. Error message: " . $data['Message']);
 
-        if ($filecaches === null)
-            throw new \Exception("Could not retrieve filecache URLs.");
-
-        return new DomainToken($username, $domain, $filecaches, $token);
+        return $data['Data'];
     }
 
-    private function GetLoginURL(string $domain)
+    public function GetDirectoryChildren(string $shareId, string $internalName, string $domain, $token)
     {
-        return "https://clientgateway.$domain/Login2.aspx";
+        $request = new Request('GET', $this->DirectoryChildrenURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
+
+        $response = $this->client->sendRequest($request);
+
+        $data = json_decode($response->getBody(), true);
+
+        if ($data['Message'] !== 'Ok.')
+            throw new \Exception("Could not retrieve directory children. Error message: " . $data['Message']);
+
+        return $data['Data'];
     }
 
-    private function GetGatewayLoginURL(string $domain, string $username, string $token)
+    public function GetDomainTokens(string $username, string $password, string $domain) : array
     {
-        return "https://clientgateway.$domain/ClientLogin.aspx?userEmail=$username&token=$token";
+        $loginData = [
+            'UserName' => $username,
+            'Password' => $password,
+            'DeviceId' => $this->deviceId,
+            'Longitude' => 0,
+            'Latitude' => 0,
+        ];
+
+        $request = new Request('POST', $this->DomainTokensURL($domain), $this->defaultHeaders, json_encode($loginData));
+
+        $response = $this->client->sendRequest($request);
+
+        $body = json_decode($response->getBody(), true);
+
+        if ($body['Message'] !== "Ok.")
+            throw new \Exception("Fail to retrieve domain's token: {$body['Message']}");
+
+        return $body['Data']['DomainTokens'];
+    }
+
+    /**
+     * @param string|Tsukaeru\RushFiles\User
+     */
+    private function AuthHeaders($token)
+    {
+        return [
+            'Authorization' => 'DomainToken ' . (is_object($token) ? $token->getToken() : $token),
+        ];
+    }
+
+    private function UserDomainURL(string $username) : string
+    {
+        return "https://global.rushfiles.com/getuserdomain.aspx?useremail=$username";
+    }
+
+    private function DomainTokensURL(string $domain) : string
+    {
+        return "https://clientgateway.$domain/api/domaintokens";
+    }
+
+    private function RegisterDeviceURL(string $domain, string $deviceId) : string
+    {
+        return "https://clientgateway.$domain/api/devices/$deviceId";
+    }
+
+    private function UsersShareURL(string $domain, string $username, bool $includeAssociations = false)
+    {
+        return "https://clientgateway.$domain/api/users/$username/shares" . ($includeAssociations ? '?includeAssociation=true' : '');
+    }
+
+    private function DirectoryChildrenURL(string $domain, string $shareId, string $internalName)
+    {
+        return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$internalName/children";
     }
 }
