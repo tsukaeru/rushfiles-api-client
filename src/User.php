@@ -55,4 +55,27 @@ class User
     {
         return $domain ? $this->domainTokens->get($domain) : $this->domainTokens->first();
     }
+
+    public function getShares() : iterable
+    {
+        if ($this->shares === null)
+        {
+            $this->shares = collect();
+            foreach ($this->domainTokens as $domain => $token) {
+                $rawShares = $this->client->GetUserShares($this->username, $token, $domain);
+                $self = $this;
+                $objShares = collect($rawShares)->mapWithKeys(function ($data) use ($domain, $token, $self) {
+                    return [$data['Id'] => new VirtualFile($data, $domain, $token, $self->client)];
+                });
+                $this->shares = $this->shares->union($objShares);
+            }
+        }
+
+        return $this->shares;
+    }
+
+    public function getShare(string $id)
+    {
+        return $this->getShares()->get($id);
+    }
 }

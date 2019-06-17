@@ -41,4 +41,23 @@ class UserTest extends TestCase
 
         $this->assertEquals(['cloudfile.jp', 'rushfiles.com'], $user->getDomains()->toArray());
     }
+
+    public function testGetShares()
+    {
+        $client = $this->createMock(Client::class);
+
+        $map = [
+            ['username', 'cf_token', 'cloudfile.jp', [['Id' => 'cf_share_id']]],
+            ['username', 'rf_token', 'rushfiles.com', [['Id' => 'rf_share_id']]],
+        ];
+        $client->method('GetUserShares')->will($this->returnValueMap($map));
+
+        $user = new User('username', [
+            'cloudfile.jp' => 'cf_token',
+            'rushfiles.com' => 'rf_token',
+        ], $client);
+
+        $this->assertEquals(2, count($user->getShares()));
+        $this->assertEquals('cf_share_id', $user->getShare('cf_share_id')->getInternalName());
+    }
 }
