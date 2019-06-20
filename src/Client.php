@@ -4,9 +4,11 @@ namespace Tsukaeru\RushFiles;
 
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
 use function GuzzleHttp\json_decode;
 use Ramsey\Uuid\Uuid;
 use function GuzzleHttp\json_encode;
+use Psr\Http\Message\StreamInterface;
 
 class Client
 {
@@ -152,6 +154,21 @@ class Client
     }
 
     /**
+     * @return StreamInterface|string
+     */
+    public function GetFileContent(string $shareId, string $uploadName, string $domain, string $token)
+    {
+        $request = new Request('GET', $this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
+        $response = $this->client->sendRequest($request);
+
+        if ($response->getStatusCode() >= 400) {
+            throw new \Exception("Could not download file. HTTP Status Code: " . $response->getStatusCode(), $response->getStatusCode());
+        }
+
+        return $response->getBody();
+    }
+
+    /**
      * @param string|Tsukaeru\RushFiles\User
      */
     private function AuthHeaders($token)
@@ -184,5 +201,10 @@ class Client
     private function DirectoryChildrenURL(string $domain, string $shareId, string $internalName)
     {
         return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$internalName/children";
+    }
+
+    private function FileURL(string $domain, string $shareId, string $uploadName)
+    {
+        return "https://filecache01.$domain/api/shares/$shareId/files/$uploadName";
     }
 }

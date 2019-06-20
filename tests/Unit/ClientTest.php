@@ -225,6 +225,32 @@ class ClientTest extends TestCase
         $client->GetDirectoryChildren('shareId', 'internalName', 'cloudfile.jp', 'token');
     }
 
+    public function testGetFileContent()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $mock->append(new Response(200, [], 'content'));
+
+        $content = $client->GetFileContent('shareId', 'uploadName', 'cloudfile.jp', 'token');
+
+        $this->assertEquals('content', $content);
+
+        $request = $history[0]['request'];
+        $this->assertEquals('https://filecache01.cloudfile.jp/api/shares/shareId/files/uploadName', $request->getUri());
+    }
+
+    public function testGetFileContentThrowsOnError()
+    {
+        list($client, $mock) = $this->prepareClient();
+        $mock->append(new Response(400));
+
+        $this->expectExceptionMessage('Could not download file.');
+        $this->expectExceptionCode(400);
+
+        $client->GetFileContent('shareId', 'uploadName', 'cloudfile.jp', 'token');
+    }
+
     private function prepareClient(array &$history = [])
     {
         $mock = new MockHandler();
