@@ -4,8 +4,12 @@ namespace Tsukaeru\RushFiles;
 
 use Tightenco\Collect\Support\Collection;
 use Tightenco\Collect\Support\Arr;
+use GuzzleHttp\Psr7\Stream;
+use Tsukaeru\RushFiles\VirtualFile\File;
+use Tsukaeru\RushFiles\VirtualFile\Directory;
+use Tsukaeru\RushFiles\VirtualFile\Share;
 
-class VirtualFile
+abstract class VirtualFile
 {
     /**
      * @var Collection|null of VirtualFile
@@ -45,34 +49,21 @@ class VirtualFile
         $this->client = $client;
     }
 
-    public function getChildren() : Collection
+    public static function create(array $rawData, string $domain, string $token, Client $client) : VirtualFile
     {
-        if ($this->isDirectory() && $this->children === null)
-        {
-            $rawData = $this->client->GetDirectoryChildren($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
-
-            $self = $this;
-            $this->children = collect($rawData)->mapWithKeys(function ($data) use ($self) {
-                $file = new VirtualFile($data, $self->domain, $self->token, $self->client);
-                return [$file->getInternalName() => $file];
-            });
+        if (Arr::get($rawData, 'IsFile') === true) {
+            return new File($rawData, $domain, $token, $client);
         }
 
-        return $this->children;
-    }
+        if (Arr::get($rawData, 'IsFile') === false) {
+            return new Directory($rawData, $domain, $token, $client);
+        }
 
-    public function getFiles() : Collection
-    {
-        return $this->getChildren()->filter(function ($item) {
-            return $item->isFile();
-        });
-    }
+        if (Arr::has($rawData, 'ShareType')) {
+            return new Share($rawData, $domain, $token, $client);
+        }
 
-    public function getDirectories() : Collection
-    {
-        return $this->getChildren()->filter(function ($item) {
-            return $item->isDirectory();
-        });
+        throw new \InvalidArgumentException("Could not detect VirtualFile resource type from passed properties.");
     }
 
     public function isDirectory() : bool
@@ -80,66 +71,35 @@ class VirtualFile
         return !$this->isFile();
     }
 
-    public function isFile() : bool
-    {
-        return Arr::get($this->properties, 'IsFile', false);
-    }
+    abstract public function isFile() : bool;
 
     public function getInternalName() : string
     {
-        return $this->properties['InternalName'] ?? $this->properties['Id'];
-    }
-
-    public function getUploadName() : ?string
-    {
-        return $this->properties['UploadName'] ?? null;
+        return $this->properties['InternalName'];
     }
 
     public function getName() : string
     {
-        return $this->properties['PublicName'] ?? $this->properties['Name'];
+        return $this->properties['PublicName'];
     }
 
     public function getShareId() : string
     {
-        return $this->properties['ShareId'] ?? $this->properties['Id'];
+        return $this->properties['ShareId'];
     }
 
     public function getTick() : int
     {
-        return $this->properties['Tick'] ?? $this->properties['ShareTick'];
+        return $this->properties['Tick'];
     }
 
-    public function getShareTick() : int
-    {
-        return $this->properties['ShareTick'];
-    }
+    abstract public function getSize() : int;
 
-    public function getSize() : int
-    {
-        return $this->properties['EndOfFile'] ?? 0;
-    }
+    abstract public function getContent(bool $refresh = false);
 
-    public function getContent(bool $refresh = false)
-    {
-        if ($this->isDirectory())
-        {
-            return $this->getChildren($refresh);
-        }
+    abstract public function save(string $path) : int;
 
-        if ($this->content === null || $refresh)
-        {
-            if ($this->getSize() > 0) {
-                $this->content = $this->client->GetFileContent($this->getShareId(), $this->getUploadName(), $this->domain, $this->token);
-            } else {
-                $this->content = '';
-            }
-        }
-
-        return $this->content;
-    }
-
-    public function save(string $path)
+    protected function buildPath(string $path) : string
     {
         $path = trim($path);
 
@@ -150,29 +110,6 @@ class VirtualFile
             mkdir(dirname($path), 0777, true);
         }
 
-        if (!$this->isFile())
-        {
-            return $this->saveDir($path);
-        }
-
-        $bytes = file_put_contents($path, $this->getContent());
-
-        if ($bytes === false)
-        {
-            throw new \Exception("Error saving file {$this->properties['PublicName']} to $path"); // @codeCoverageIgnore
-        }
-
-        return $bytes;
-    }
-
-    private function saveDir(string $path)
-    {
-        $path .= DIRECTORY_SEPARATOR;
-
-        foreach ($this->getChildren() as $file) {
-            $file->save($path);
-        }
-
-        return 0;
+        return $path;
     }
 }

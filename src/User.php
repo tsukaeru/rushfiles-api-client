@@ -65,7 +65,7 @@ class User
                 $rawShares = $this->client->GetUserShares($this->username, $token, $domain);
                 $self = $this;
                 $objShares = collect($rawShares)->mapWithKeys(function ($data) use ($domain, $token, $self) {
-                    return [$data['Id'] => new VirtualFile($data, $domain, $token, $self->client)];
+                    return [$data['Id'] => VirtualFile::create($data, $domain, $token, $self->client)];
                 });
                 $this->shares = $this->shares->union($objShares);
             }

@@ -2,6 +2,10 @@
 use PHPUnit\Framework\TestCase;
 use Tsukaeru\RushFiles\VirtualFile;
 use Tsukaeru\RushFiles\Client;
+use org\bovigo\vfs\vfsStream;
+use Tsukaeru\RushFiles\VirtualFile\File;
+use Tsukaeru\RushFiles\VirtualFile\Directory;
+use Tsukaeru\RushFiles\VirtualFile\Share;
 
 class VirtualFileTest extends TestCase
 {
@@ -11,11 +15,11 @@ class VirtualFileTest extends TestCase
         $client->expects($this->once())->method('GetDirectoryChildren')
             ->with($this->equalTo('sId'), $this->equalTo('sId'), $this->equalTo('cloudfile.jp'), $this->equalTo('token'))
             ->willReturn([
-                ['InternalName' => 'name1'],
-                ['InternalName' => 'name2'],
+                ['InternalName' => 'name1', 'IsFile' => true],
+                ['InternalName' => 'name2', 'IsFile' => true],
             ]);
 
-        $share = new VirtualFile(['Id' => 'sId'], 'cloudfile.jp', 'token', $client);
+        $share = new Share(['Id' => 'sId'], 'cloudfile.jp', 'token', $client);
 
         $files = $share->getChildren();
 
@@ -27,10 +31,10 @@ class VirtualFileTest extends TestCase
     {
         $client = $this->createMock(Client::class);
 
-        $share = $this->createPartialMock(VirtualFile::class, ['getChildren']);
+        $share = $this->createPartialMock(Directory::class, ['getChildren']);
         $share->method('getChildren')->willReturn(collect([
-            'file' => new VirtualFile(['IsFile' => true, 'InternalName' => 'file'], 'cloudfile.jp', 'token', $client),
-            'dir' => new VirtualFile(['IsFile' => false, 'InternalName' => 'dir'], 'cloudfile.jp', 'token', $client),
+            'file' => new File(['IsFile' => true, 'InternalName' => 'file'], 'cloudfile.jp', 'token', $client),
+            'dir' => new Directory(['IsFile' => false, 'InternalName' => 'dir'], 'cloudfile.jp', 'token', $client),
         ]));
 
         $files = $share->getFiles();
@@ -47,7 +51,7 @@ class VirtualFileTest extends TestCase
         $client = $this->createMock(Client::class);
         $client->method('GetFileContent')->willReturn('content');
 
-        $file = new VirtualFile([
+        $file = new File([
             'IsFile' => true,
             'InternalName' => 'iname',
             'UploadName' => 'uname',
@@ -67,7 +71,7 @@ class VirtualFileTest extends TestCase
         $client = $this->createMock(Client::class);
         $client->method('GetFileContent')->willReturn('content');
 
-        $file = new VirtualFile([
+        $file = new File([
             'IsFile' => true,
             'InternalName' => 'iname',
             'ShareId' => 'sId',
@@ -84,10 +88,10 @@ class VirtualFileTest extends TestCase
     public function testGetContentDirectory()
     {
         $client = $this->createMock(Client::class);
-        $share = $this->createPartialMock(VirtualFile::class, ['getChildren']);
+        $share = $this->createPartialMock(Directory::class, ['getChildren']);
         $share->method('getChildren')->willReturn(collect([
-            'file' => new VirtualFile(['IsFile' => true, 'InternalName' => 'file'], 'cloudfile.jp', 'token', $client),
-            'dir' => new VirtualFile(['IsFile' => false, 'InternalName' => 'dir'], 'cloudfile.jp', 'token', $client),
+            'file' => new File(['IsFile' => true, 'InternalName' => 'file'], 'cloudfile.jp', 'token', $client),
+            'dir' => new Directory(['IsFile' => false, 'InternalName' => 'dir'], 'cloudfile.jp', 'token', $client),
         ]));
 
         $files = $share->getContent();
@@ -96,7 +100,7 @@ class VirtualFileTest extends TestCase
 
     public function testFileSave()
     {
-        $file = $this->createPartialMock(VirtualFile::class, ['getContent', 'getName', 'isFile']);
+        $file = $this->createPartialMock(File::class, ['getContent', 'getName', 'isFile']);
         $file->method('getContent')->willReturn('content');
         $file->method('getName')->willReturn('test.txt');
         $file->method('isFile')->willReturn(true);
@@ -115,7 +119,7 @@ class VirtualFileTest extends TestCase
 
     public function testSaveEmptyFile()
     {
-        $file = $this->createPartialMock(VirtualFile::class, ['getContent', 'isFile', 'getName']);
+        $file = $this->createPartialMock(File::class, ['getContent', 'isFile', 'getName']);
         $file->method('getContent')->willReturn('');
         $file->method('getName')->willReturn('test.txt');
         $file->method('isFile')->willReturn(true);
@@ -130,17 +134,17 @@ class VirtualFileTest extends TestCase
 
     public function testFileSaveDirectory()
     {
-        $file1 = $this->createPartialMock(VirtualFile::class, ['getContent', 'getName', 'isFile']);
+        $file1 = $this->createPartialMock(File::class, ['getContent', 'getName', 'isFile']);
         $file1->method('getContent')->willReturn('content');
         $file1->method('getName')->willReturn('test1.txt');
         $file1->method('isFile')->willReturn(true);
 
-        $file2 = $this->createPartialMock(VirtualFile::class, ['getContent', 'getName', 'isFile']);
+        $file2 = $this->createPartialMock(File::class, ['getContent', 'getName', 'isFile']);
         $file2->method('getContent')->willReturn('content');
         $file2->method('getName')->willReturn('test2.txt');
         $file2->method('isFile')->willReturn(true);
 
-        $dir = $this->createPartialMock(VirtualFile::class, ['getChildren', 'getName', 'isFile']);
+        $dir = $this->createPartialMock(Directory::class, ['getChildren', 'getName', 'isFile']);
         $dir->method('getChildren')->willReturn([$file1, $file2]);
         $dir->method('getName')->willReturn('dir');
         $dir->method('isFile')->willReturn(false);
@@ -160,14 +164,14 @@ class VirtualFileTest extends TestCase
     {
         $client = $this->createMock(Client::class);
 
-        $file = new VirtualFile($properties, 'cloudfile.jp', 'token', $client);
+        $file = VirtualFile::create($properties, 'cloudfile.jp', 'token', $client);
 
+        $this->assertInstanceOf($expected['Class'], $file);
         $this->assertEquals($expected['isFile'], $file->isFile());
         $this->assertEquals($expected['isDirectory'], $file->isDirectory());
         $this->assertEquals($expected['InternalName'], $file->getInternalName());
         $this->assertEquals($expected['ShareId'], $file->getShareId());
         $this->assertEquals($expected['Tick'], $file->getTick());
-        $this->assertEquals($expected['ShareTick'], $file->getShareTick());
     }
 
     public function virtualFilesProvider()
@@ -179,7 +183,6 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
-                    'ShareTick' => 2,
                 ],
                 [
                     'isFile' => true,
@@ -187,7 +190,7 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
-                    'ShareTick' => 2,
+                    'Class' => File::class,
                 ],
             ],
             'directory' => [
@@ -196,7 +199,6 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
-                    'ShareTick' => 2,
                 ],
                 [
                     'isFile' => false,
@@ -204,13 +206,14 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
-                    'ShareTick' => 2,
+                    'Class' => Directory::class,
                 ],
             ],
             'share' => [
                 [
                     'Id' => 'id',
                     'ShareTick' => 2,
+                    'ShareType' => 0,
                 ],
                 [
                     'isFile' => false,
@@ -218,7 +221,7 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'id',
                     'ShareId' => 'id',
                     'Tick' => 2,
-                    'ShareTick' => 2,
+                    'Class' => Share::class,
                 ],
             ],
         ];

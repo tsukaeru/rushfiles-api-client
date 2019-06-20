@@ -47,8 +47,8 @@ class UserTest extends TestCase
         $client = $this->createMock(Client::class);
 
         $map = [
-            ['username', 'cf_token', 'cloudfile.jp', [['Id' => 'cf_share_id']]],
-            ['username', 'rf_token', 'rushfiles.com', [['Id' => 'rf_share_id']]],
+            ['username', 'cf_token', 'cloudfile.jp', [['Id' => 'cf_share_id', 'ShareType' => 0]]],
+            ['username', 'rf_token', 'rushfiles.com', [['Id' => 'rf_share_id', 'ShareType' => 0]]],
         ];
         $client->method('GetUserShares')->will($this->returnValueMap($map));
 
