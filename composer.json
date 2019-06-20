@@ -20,7 +20,8 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^8.2",
-        "alextartan/guzzle-psr18-adapter": "^2.0"
+        "alextartan/guzzle-psr18-adapter": "^2.0",
+        "mikey179/vfsstream": "^1.6"
     },
     "scripts": {
         "test": [
