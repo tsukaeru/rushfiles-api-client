@@ -41,7 +41,7 @@ class ClientTest extends TestCase
 
         $request = $history[0]['request'];
         $this->assertEquals('PUT', $request->getMethod());
-        $this->assertRegExp('/https:\/\/clientgateway.cloudfile.jp\/api\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/', $request->getURI());
+        $this->assertRegExp('/https:\/\/clientgateway.cloudfile.jp\/api\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/', (string)$request->getUri());
         $this->assertArraySubset([
             'Accept' => ['application/json'],
             'Content-Type' => ['application/json'],
@@ -174,7 +174,7 @@ class ClientTest extends TestCase
 
         $request = $history[0]['request'];
         $this->assertEquals('GET', $request->getMethod());
-        $this->assertStringStartsWith('https://clientgateway.cloudfile.jp/api/users/admin@example.com/shares', $request->getUri());
+        $this->assertStringStartsWith('https://clientgateway.cloudfile.jp/api/users/admin@example.com/shares', (string)$request->getUri());
         $this->assertArraySubset(['Authorization' => ['DomainToken token']], $request->getHeaders());
     }
 

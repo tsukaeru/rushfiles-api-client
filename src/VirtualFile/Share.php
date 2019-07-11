@@ -4,22 +4,22 @@ namespace Tsukaeru\RushFiles\VirtualFile;
 
 class Share extends Directory
 {
-    public function getInternalName(): string
+    public function getInternalName()
     {
         return $this->properties['Id'];
     }
 
-    public function getName(): string
+    public function getName()
     {
         return $this->properties['Name'];
     }
 
-    public function getShareId(): string
+    public function getShareId()
     {
         return $this->properties['Id'];
     }
 
-    public function getTick(): int
+    public function getTick()
     {
         return $this->properties['ShareTick'];
     }

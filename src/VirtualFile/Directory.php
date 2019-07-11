@@ -3,13 +3,13 @@
 namespace Tsukaeru\RushFiles\VirtualFile;
 
 use Tsukaeru\RushFiles\VirtualFile;
-use Tightenco\Collect\Support\Collection;
+use Illuminate\Support\Collection;
 
 class Directory extends VirtualFile
 {
-    public function getChildren(bool $refresh = false) : iterable
+    public function getChildren($refresh = false)
     {
-        if ($this->isDirectory() && ($this->children === null || $refresh))
+        if ($this->children === null || $refresh)
         {
             $rawData = $this->client->GetDirectoryChildren($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
 
@@ -23,36 +23,36 @@ class Directory extends VirtualFile
         return $this->children;
     }
 
-    public function getFiles() : Collection
+    public function getFiles()
     {
         return $this->getChildren()->filter(function ($item) {
             return $item->isFile();
         });
     }
 
-    public function getDirectories() : Collection
+    public function getDirectories()
     {
         return $this->getChildren()->filter(function ($item) {
             return $item->isDirectory();
         });
     }
 
-    public function isFile() : bool
+    public function isFile()
     {
         return false;
     }
 
-    public function getSize(): int
+    public function getSize()
     {
-        return count($this->getChildren());
+        return $this->getChildren()->count();
     }
 
-    public function getContent(bool $refresh = false)
+    public function getContent($refresh = false)
     {
         return $this->getChildren($refresh);
     }
 
-    public function save(string $path): int
+    public function save()
     {
         $path = $this->buildPath($path) . DIRECTORY_SEPARATOR;
         $bytes = 0;

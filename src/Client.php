@@ -80,7 +80,7 @@ class Client
      * Automates getting user's domain, registering device and retrieving tokens,
      * and packs everything into User object.
      */
-    public function Login(string $username, string $password, string $domain = null) : User
+    public function Login($username, $password, $domain = null)
     {
         if (!is_string($domain)) {
             $domain = $this->GetUserDomain($username);
@@ -93,7 +93,7 @@ class Client
         return new User($username, $tokens, $this);
     }
 
-    public function GetUserDomain(string $username) : string
+    public function GetUserDomain($username)
     {
         $request = new Request('GET', $this->UserDomainURL($username));
         $response = $this->client->send($request);
@@ -108,7 +108,7 @@ class Client
      * can be remembered not to make needless calls.
      * This client does not keep track of registration on itself.
      */
-    public function RegisterDevice(string $username, string $password, string $domain) : void
+    public function RegisterDevice($username, $password, $domain)
     {
         $deviceAssociation = [
             'UserName' => $username,
@@ -128,7 +128,7 @@ class Client
         json_decode($response->getBody());
         }
 
-    public function GetUserShares(string $username, string $token, string $domain) : iterable
+    public function GetUserShares($username, $token, $domain)
     {
         try {
         $request = new Request('GET', $this->UsersShareURL($domain, $username), $this->AuthHeaders($token));
@@ -142,7 +142,7 @@ class Client
         return $data['Data'];
     }
 
-    public function GetDirectoryChildren(string $shareId, string $internalName, string $domain, $token)
+    public function GetDirectoryChildren($shareId, $internalName, $domain, $token)
     {
         try {
         $request = new Request('GET', $this->DirectoryChildrenURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
@@ -156,7 +156,7 @@ class Client
         return $data['Data'];
     }
 
-    public function GetDomainTokens(string $username, string $password, string $domain) : array
+    public function GetDomainTokens($username, $password, $domain)
     {
         $loginData = [
             'UserName' => $username,
@@ -181,7 +181,7 @@ class Client
     /**
      * @return StreamInterface|string
      */
-    public function GetFileContent(string $shareId, string $uploadName, string $domain, string $token)
+    public function GetFileContent($shareId, $uploadName, $domain, $token)
     {
         try {
             $response = $this->client->get($this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
@@ -190,6 +190,25 @@ class Client
         }
 
         return $response->getBody();
+    }
+
+
+
+
+    private function throwException(Response $response, $msg = "Request error.")
+    {
+        $msg .= " HTTP Status Code: {$response->getStatusCode()}";
+
+        if ($response->getBody()) {
+            $data = \json_decode($response->getBody(), true);
+
+            if ($data !== false) {
+                if (isset($data['Message'])) $msg .= "\nMessage: " . $data['Message'];
+                if (isset($data['ResponseInfo'])) $msg .= "\nResponse: {$data['ResponseInfo']['ResponseCode']} - {$data['ResponseInfo']['ResponseCode']}";
+            }
+        }
+
+        throw new \Exception($msg, $response->getStatusCode());
     }
 
     /**
@@ -202,32 +221,32 @@ class Client
         ];
     }
 
-    private function UserDomainURL(string $username) : string
+    private function UserDomainURL($username)
     {
         return "https://global.rushfiles.com/getuserdomain.aspx?useremail=$username";
     }
 
-    private function DomainTokensURL(string $domain) : string
+    private function DomainTokensURL($domain)
     {
         return "https://clientgateway.$domain/api/domaintokens";
     }
 
-    private function RegisterDeviceURL(string $domain, string $deviceId) : string
+    private function RegisterDeviceURL($domain, $deviceId)
     {
         return "https://clientgateway.$domain/api/devices/$deviceId";
     }
 
-    private function UsersShareURL(string $domain, string $username, bool $includeAssociations = false)
+    private function UsersShareURL($domain, $username, $includeAssociations = false)
     {
         return "https://clientgateway.$domain/api/users/$username/shares" . ($includeAssociations ? '?includeAssociation=true' : '');
     }
 
-    private function DirectoryChildrenURL(string $domain, string $shareId, string $internalName)
+    private function DirectoryChildrenURL($domain, $shareId, $internalName)
     {
         return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$internalName/children";
     }
 
-    private function FileURL(string $domain, string $shareId, string $uploadName)
+    private function FileURL($domain, $shareId, $uploadName)
     {
         return "https://filecache01.$domain/api/shares/$shareId/files/$uploadName";
     }

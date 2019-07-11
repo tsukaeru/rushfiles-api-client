@@ -6,22 +6,22 @@ use Tsukaeru\RushFiles\VirtualFile;
 
 class File extends VirtualFile
 {
-    public function isFile() : bool
+    public function isFile()
     {
         return true;
     }
 
-    public function getUploadName() : ?string
+    public function getUploadName()
     {
-        return $this->properties['UploadName'] ?? null;
+        return $this->properties->get('UploadName');
     }
 
-    public function getSize(): int
+    public function getSize()
     {
         return $this->properties['EndOfFile'];
     }
 
-    public function getContent(bool $refresh = false)
+    public function getContent($refresh = false)
     {
         if ($this->content === null || $refresh)
         {
@@ -35,7 +35,7 @@ class File extends VirtualFile
         return $this->content;
     }
 
-    public function save(string $path) : int
+    public function download()
     {
         $path = $this->buildPath($path);
 

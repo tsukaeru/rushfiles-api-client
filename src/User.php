@@ -2,7 +2,7 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Tightenco\Collect\Support\Arr;
+use Illuminate\Support\Arr;
 
 class User
 {
@@ -26,7 +26,7 @@ class User
      */
     protected $client;
 
-    public function __construct(string $username, array $tokens, Client $client)
+    public function __construct($username, $tokens, Client $client)
     {
         $this->username = $username;
 
@@ -41,22 +41,22 @@ class User
         $this->client = $client;
     }
 
-    public function getUsername() : string
+    public function getUsername()
     {
         return $this->username;
     }
 
-    public function getDomains() : iterable
+    public function getDomains()
     {
         return $this->domainTokens->keys();
     }
 
-    public function getToken(string $domain = null) : string
+    public function getToken($domain = null)
     {
         return $domain ? $this->domainTokens->get($domain) : $this->domainTokens->first();
     }
 
-    public function getShares() : iterable
+    public function getShares()
     {
         if ($this->shares === null)
         {
@@ -74,7 +74,7 @@ class User
         return $this->shares;
     }
 
-    public function getShare(string $id)
+    public function getShare($id)
     {
         return $this->getShares()->get($id);
     }

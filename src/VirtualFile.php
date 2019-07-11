@@ -2,8 +2,8 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Tightenco\Collect\Support\Collection;
-use Tightenco\Collect\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Arr;
 use GuzzleHttp\Psr7\Stream;
 use Tsukaeru\RushFiles\VirtualFile\File;
 use Tsukaeru\RushFiles\VirtualFile\Directory;
@@ -49,14 +49,14 @@ abstract class VirtualFile
         $this->client = $client;
     }
 
-    public static function create(array $rawData, string $domain, string $token, Client $client) : VirtualFile
+    public static function create($rawData, $domain, $token, Client $client, VirtualFile $parent = null)
     {
         if (Arr::get($rawData, 'IsFile') === true) {
-            return new File($rawData, $domain, $token, $client);
+            return new File($rawData, $domain, $token, $client, $parent);
         }
 
         if (Arr::get($rawData, 'IsFile') === false) {
-            return new Directory($rawData, $domain, $token, $client);
+            return new Directory($rawData, $domain, $token, $client, $parent);
         }
 
         if (Arr::has($rawData, 'ShareType')) {
@@ -66,40 +66,40 @@ abstract class VirtualFile
         throw new \InvalidArgumentException("Could not detect VirtualFile resource type from passed properties.");
     }
 
-    public function isDirectory() : bool
+    public function isDirectory()
     {
         return !$this->isFile();
     }
 
-    abstract public function isFile() : bool;
+    abstract public function isFile();
 
-    public function getInternalName() : string
+    public function getInternalName()
     {
         return $this->properties['InternalName'];
     }
 
-    public function getName() : string
+    public function getName()
     {
         return $this->properties['PublicName'];
     }
 
-    public function getShareId() : string
+    public function getShareId()
     {
         return $this->properties['ShareId'];
     }
 
-    public function getTick() : int
+    public function getTick()
     {
         return $this->properties['Tick'];
     }
 
-    abstract public function getSize() : int;
+    abstract public function getSize();
 
-    abstract public function getContent(bool $refresh = false);
+    abstract public function getContent($refresh = false);
 
     abstract public function save(string $path) : int;
 
-    protected function buildPath(string $path) : string
+    protected function buildPath($path)
     {
         $path = trim($path);
 
