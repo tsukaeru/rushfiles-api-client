@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\Stream;
 use Tsukaeru\RushFiles\VirtualFile\File;
 use Tsukaeru\RushFiles\VirtualFile\Directory;
 use Tsukaeru\RushFiles\VirtualFile\Share;
+use Tsukaeru\RushFiles\DTO\CreatePublicLink;
 
 abstract class VirtualFile
 {
@@ -40,6 +41,11 @@ abstract class VirtualFile
      * @var string
      */
     protected $content;
+
+    /**
+     * @var Tightenco\Collect\Support\Collection
+     */
+    protected $links;
 
     /**
      * @var Tsukaeru\RushFiles\VirtualFile
@@ -129,14 +135,55 @@ abstract class VirtualFile
         }
     }
 
-    public function setPath($path)
+    public function getPublicLinks($refresh = false)
+    {
+        if ($this->links !== null || $refresh)
         {
+            $linksRaw = $this->client->GetPublicLinks($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
+            $this->links = collect($linksRaw)->map(function ($data) {
+                return new PublicLink($data);
+            });
+        }
+
+        return $this->links;
+    }
+
+    public function createPublicLink($config = [], $fetch = PublicLink::OBJECT)
+    {
+        if (is_string($config)) {
+            $fetch = $config;
+            $config = [];
+        }
+
+        $dto = new CreatePublicLink($this->getShareId(), $this->getInternalName(), $config);
+        $link = $this->client->CreatePublicLink($dto, $this->domain, $this->token);
+
+        if ($fetch === PublicLink::OBJECT) {
+            $id = [];
+            preg_match("/id=([[:alnum:]]*)/", $link, $id);
+            $id = $id[1];
+
+            $links = $this->getPublicLinks(true);
+            foreach ($links as $link) {
+                if ($link->getId() === $id) {
+                    return $link;
+                }
+            }
+
+            throw new \Exception("New public link could not be found.");
+        }
+
+        return $link;
+    }
+
+    public function setPath($path)
+    {
         $this->path = trim($path);
 
         if ($this->path[-1] === DIRECTORY_SEPARATOR) $this->path .= $this->getName();
 
         return $this;
-        }
+    }
 
     public function getPath()
     {

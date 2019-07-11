@@ -150,12 +150,12 @@ class Client
         }
 
         json_decode($response->getBody());
-        }
+    }
 
     public function GetUserShares($username, $token, $domain)
     {
         try {
-        $request = new Request('GET', $this->UsersShareURL($domain, $username), $this->AuthHeaders($token));
+            $request = new Request('GET', $this->UsersShareURL($domain, $username), $this->AuthHeaders($token));
             $response = $this->client->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve user's shares.");
@@ -169,7 +169,7 @@ class Client
     public function GetDirectoryChildren($shareId, $internalName, $domain, $token)
     {
         try {
-        $request = new Request('GET', $this->DirectoryChildrenURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
+            $request = new Request('GET', $this->DirectoryChildrenURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
             $response = $this->client->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve directory children.");
@@ -205,7 +205,7 @@ class Client
         ];
 
         try {
-        $request = new Request('POST', $this->DomainTokensURL($domain), $this->defaultHeaders, json_encode($loginData));
+            $request = new Request('POST', $this->DomainTokensURL($domain), $this->defaultHeaders, json_encode($loginData));
             $response = $this->client->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Fail to retrieve domain's token.");
@@ -314,7 +314,49 @@ class Client
         }
     }
 
+    public function GetPublicLinks($shareId, $virtualFileId, $domain, $token)
+    {
+        try {
+            $request = new Request('GET', $this->FilePublicLinksURL($domain, $shareId, $virtualFileId), $this->AuthHeaders($token));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not get public links.");
+        }
 
+        $body = json_decode($response->getBody(), true);
+
+        return $body['Data'];
+    }
+
+    public function CreatePublicLink(CreatePublicLink $linkDto, $domain, $token)
+    {
+        $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
+
+        try {
+            $request = new Request('POST', $this->PublicLinksURL($domain), $headers, $linkDto->getJSON());
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not create public link.");
+        }
+
+        $body = json_decode($response->getBody(), true);
+
+        return $body['Data']['FullLink'];
+    }
+
+    public function GetPublicLink($id, $domain, $token)
+    {
+        try {
+            $request = new Request('GET', $this->PublicLinksURL($domain, $id), $this->AuthHeaders($token));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not retrieve details on a public link.");
+        }
+
+        $body = json_decode($response->getBody());
+
+        return $body['Data'];
+    }
 
     private function uploadFileContents($url, $token, $path)
     {
@@ -397,4 +439,13 @@ class Client
         return "https://filecache01.$domain/api/shares/$shareId/files";
     }
 
+    private function FilePublicLinksURL($domain, $shareId, $virtualFileId)
+    {
+        return "https://clientgateway.$domain/api/shares/$shareId" . (!empty($virtualFileId) ? "/virtualfiles/$virtualFileId" : '') . "/publiclinks";
+    }
+
+    private function PublicLinksURL($domain, $linkId = null)
+    {
+        return "https://clientgateway.$domain/api/publiclinks" . (!empty($linkId) ? "/$linkId" : '');
+    }
 }
