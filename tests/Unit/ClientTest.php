@@ -6,10 +6,11 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Tsukaeru\RushFiles\Client;
-use AlexTartan\GuzzlePsr18Adapter\Client as HttpClient;
 use function GuzzleHttp\json_encode;
 use function GuzzleHttp\json_decode;
 use Tsukaeru\RushFiles\User;
+use GuzzleHttp\Client as GuzzleClient;
+use Tsukaeru\RushFiles\VirtualFile;
 
 class ClientTest extends TestCase
 {
@@ -257,7 +258,10 @@ class ClientTest extends TestCase
 
         $stack = HandlerStack::create($mock);
         $stack->push(Middleware::history($history));
-        $client = new Client(new HttpClient(['handler' => $stack]));
+        $guzzle = new GuzzleClient(['handler' => $stack]);
+
+        $client = new Client();
+        $client->setHttpClient($guzzle);
 
         return [$client, $mock];
     }

@@ -2,13 +2,13 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use function GuzzleHttp\json_decode;
 use Ramsey\Uuid\Uuid;
 use function GuzzleHttp\json_encode;
-use Psr\Http\Message\StreamInterface;
+use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Exception\ClientException;
 
 class Client
 {
@@ -18,14 +18,14 @@ class Client
     const CLIENT_NAMESPACE_UUID = '8737930c-8f13-11e9-910b-7e7a262c9c6d';
 
     /**
-     * @var Psr\Http\Client\ClientInterface
+     * @var GuzzleHttp\Client
      */
     protected $client;
 
     /**
      * @var string
      */
-    protected $deviceName;
+    protected $deviceName = 'Tsukaeru\RushFiles';
 
     /**
      * @var string
@@ -33,21 +33,47 @@ class Client
     private $deviceOS;
 
     /**
+     * Generated from CLIENT_NAMESPACE_UUID and default device name
      * @var string
      */
-    private $deviceId;
+    private $deviceId = 'dae9022f-96c2-52fa-8aa1-d758a22759cc';
 
     private $defaultHeaders = [
         'Accept' => 'application/json',
         'Content-Type' => 'application/json',
     ];
 
-    public function __construct(HttpClientInterface $client, string $deviceName = 'Tsukaeru\RushFiles')
+    public function __construct()
     {
-        $this->client = $client;
+        $this->deviceOS = php_uname('s') . ' ' . php_uname('');
+        $this->deviceId = Uuid::uuid5(self::CLIENT_NAMESPACE_UUID, $this->deviceName);
+
+        $this->client = new HttpClient();
+    }
+
+    public function setDeviceName($deviceName)
+    {
         $this->deviceName = $deviceName;
         $this->deviceId = Uuid::uuid5(self::CLIENT_NAMESPACE_UUID, $this->deviceName);
-        $this->deviceOS = php_uname('s') . ' ' . php_uname('');
+
+        return $this;
+    }
+
+    public function getDeviceName()
+    {
+        return $this->deviceName;
+    }
+
+    public function getDeviceId()
+    {
+        return $this->deviceId;
+    }
+
+    public function setHttpClient(HttpClient $client)
+    {
+        $this->client = $client;
+
+        return $this;
     }
 
     /**
@@ -70,7 +96,7 @@ class Client
     public function GetUserDomain(string $username) : string
     {
         $request = new Request('GET', $this->UserDomainURL($username));
-        $response = $this->client->sendRequest($request);
+        $response = $this->client->send($request);
         list(,$domain) = explode(',', $response->getBody());
 
         return $domain;
@@ -92,41 +118,40 @@ class Client
             'DeviceType' => 8, // unknown
         ];
 
-        $request = new Request('PUT', $this->RegisterDeviceURL($domain, $this->deviceId), $this->defaultHeaders, json_encode($deviceAssociation));
-
-        $response = $this->client->sendRequest($request);
-
-        $data = json_decode($response->getBody());
-
-        if ($data->Message !== "Ok.") {
-            throw new \Exception("Could not register device: " . $data->Message);
+        try {
+            $request = new Request('PUT', $this->RegisterDeviceURL($domain, $this->getDeviceId()), $this->defaultHeaders, json_encode($deviceAssociation));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not register device.");
         }
-    }
+
+        json_decode($response->getBody());
+        }
 
     public function GetUserShares(string $username, string $token, string $domain) : iterable
     {
+        try {
         $request = new Request('GET', $this->UsersShareURL($domain, $username), $this->AuthHeaders($token));
-
-        $response = $this->client->sendRequest($request);
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not retrieve user's shares.");
+        }
 
         $data = json_decode($response->getBody(), true);
-
-        if ($data['Message'] !== "Ok.")
-            throw new \Exception("Could not retrieve user's shares. Error message: " . $data['Message']);
 
         return $data['Data'];
     }
 
     public function GetDirectoryChildren(string $shareId, string $internalName, string $domain, $token)
     {
+        try {
         $request = new Request('GET', $this->DirectoryChildrenURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
-
-        $response = $this->client->sendRequest($request);
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not retrieve directory children.");
+        }
 
         $data = json_decode($response->getBody(), true);
-
-        if ($data['Message'] !== 'Ok.')
-            throw new \Exception("Could not retrieve directory children. Error message: " . $data['Message']);
 
         return $data['Data'];
     }
@@ -136,19 +161,19 @@ class Client
         $loginData = [
             'UserName' => $username,
             'Password' => $password,
-            'DeviceId' => $this->deviceId,
+            'DeviceId' => $this->getDeviceId(),
             'Longitude' => 0,
             'Latitude' => 0,
         ];
 
+        try {
         $request = new Request('POST', $this->DomainTokensURL($domain), $this->defaultHeaders, json_encode($loginData));
-
-        $response = $this->client->sendRequest($request);
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Fail to retrieve domain's token.");
+        }
 
         $body = json_decode($response->getBody(), true);
-
-        if ($body['Message'] !== "Ok.")
-            throw new \Exception("Fail to retrieve domain's token: {$body['Message']}");
 
         return $body['Data']['DomainTokens'];
     }
@@ -158,11 +183,10 @@ class Client
      */
     public function GetFileContent(string $shareId, string $uploadName, string $domain, string $token)
     {
-        $request = new Request('GET', $this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
-        $response = $this->client->sendRequest($request);
-
-        if ($response->getStatusCode() >= 400) {
-            throw new \Exception("Could not download file. HTTP Status Code: " . $response->getStatusCode(), $response->getStatusCode());
+        try {
+            $response = $this->client->get($this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not download file.");
         }
 
         return $response->getBody();

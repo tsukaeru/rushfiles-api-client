@@ -2,3 +2,4 @@
 /tests/coverage
 .phpunit.result.cache
 clientgateway.json
+filecache01.json
