@@ -37,9 +37,9 @@ class File extends VirtualFile
 
     public function download()
     {
-        $path = $this->buildPath($path);
+        $this->createDirectory();
 
-        $bytes = file_put_contents($path, $this->getContent());
+        $bytes = file_put_contents($this->path, $this->getContent());
 
         if ($bytes === false)
         {
@@ -47,5 +47,18 @@ class File extends VirtualFile
         }
 
         return $bytes;
+    }
+
+    public function upload($path)
+    {
+        $this->properties = $this->client->UpdateVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $this->getInternalName(), $path, $this->domain, $this->token);
+    }
+
+    protected function createDirectory()
+    {
+        if (!is_dir(dirname($this->path)))
+        {
+            mkdir(dirname($this->path), 0777, true);
+        }
     }
 }

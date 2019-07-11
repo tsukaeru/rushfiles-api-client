@@ -226,6 +226,38 @@ class ClientTest extends TestCase
         $client->GetDirectoryChildren('shareId', 'internalName', 'cloudfile.jp', 'token');
     }
 
+    public function testGetFile()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $mock->append(new Response(200, [], json_encode(['Data' => [
+            'ShareId' => 'shareId',
+            'InternalName' => 'InternalName',
+            'IsFile' => true
+        ]])));
+
+        $file = $client->GetFile('shareId', 'internalName', 'cloudfile.jp', 'token');
+
+        $this->assertInstanceOf(VirtualFile::class, $file);
+
+        $request = $history[0]['request'];
+        $this->assertEquals('https://clientgateway.cloudfile.jp/api/shares/shareId/virtualfiles/internalName', $request->getUri());
+    }
+
+    public function testGetFileThrowsOnError()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $mock->append(new Response(400));
+
+        $this->expectExceptionMessage('Could not retrieve data about virtual file.');
+        $this->expectExceptionCode(400);
+
+        $client->GetFile('shareId', 'internalName', 'cloudfile.jp', 'token');
+    }
+
     public function testGetFileContent()
     {
         $history = [];
@@ -250,6 +282,18 @@ class ClientTest extends TestCase
         $this->expectExceptionCode(400);
 
         $client->GetFileContent('shareId', 'uploadName', 'cloudfile.jp', 'token');
+    }
+
+    public function testGetSetDeviceName()
+    {
+        $client = new Client;
+
+        $this->assertEquals('Tsukaeru\RushFiles', $client->getDeviceName());
+
+        $client->setDeviceName('TestName');
+
+        $this->assertEquals('TestName', $client->getDeviceName());
+        $this->assertEquals('4b101b46-823d-5e39-a00a-1fc81c2ab356', $client->getDeviceId());
     }
 
     private function prepareClient(array &$history = [])

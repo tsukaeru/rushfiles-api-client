@@ -15,8 +15,8 @@ class VirtualFileTest extends TestCase
         $client->expects($this->once())->method('GetDirectoryChildren')
             ->with($this->equalTo('sId'), $this->equalTo('sId'), $this->equalTo('cloudfile.jp'), $this->equalTo('token'))
             ->willReturn([
-                ['InternalName' => 'name1', 'IsFile' => true],
-                ['InternalName' => 'name2', 'IsFile' => true],
+                ['InternalName' => 'name1', 'PublicName' => 'name1', 'IsFile' => true],
+                ['InternalName' => 'name2', 'PublicName' => 'name2', 'IsFile' => true],
             ]);
 
         $share = new Share(['Id' => 'sId'], 'cloudfile.jp', 'token', $client);
@@ -107,12 +107,12 @@ class VirtualFileTest extends TestCase
 
         $file_system = vfsStream::setup();
 
-        $file->save($file_system->url().'/');
+        $file->setPath($file_system->url().'/')->download('');
         $this->assertFileExists($file_system->url() . '/test.txt');
         $this->assertEquals('content', file_get_contents($file_system->url().'/test.txt'));
 
         $path = $file_system->url() .'/directory/test.txt';
-        $file->save($path);
+        $file->setPath($path)->download('');
         $this->assertFileExists($path);
         $this->assertEquals('content', file_get_contents($path));
     }
@@ -127,7 +127,7 @@ class VirtualFileTest extends TestCase
         $file_system = vfsStream::setup();
 
         $path = $file_system->url() .'/test.txt';
-        $file->save($path);
+        $file->setPath($path)->download('');
         $this->assertFileExists($path);
         $this->assertEquals(0, filesize($path));
     }
@@ -151,7 +151,7 @@ class VirtualFileTest extends TestCase
 
         $file_system = vfsStream::setup();
         $path = $file_system->url() . DIRECTORY_SEPARATOR;
-        $dir->save($path);
+        $dir->setPath($path)->download();
 
         $this->assertFileExists($path . 'dir/test1.txt');
         $this->assertFileExists($path . 'dir/test2.txt');

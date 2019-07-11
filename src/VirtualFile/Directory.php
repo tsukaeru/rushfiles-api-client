@@ -4,6 +4,7 @@ namespace Tsukaeru\RushFiles\VirtualFile;
 
 use Tsukaeru\RushFiles\VirtualFile;
 use Illuminate\Support\Collection;
+use Tsukaeru\RushFiles\DTO\RfVirtualFile;
 
 class Directory extends VirtualFile
 {
@@ -15,8 +16,8 @@ class Directory extends VirtualFile
 
             $self = $this;
             $this->children = collect($rawData)->mapWithKeys(function ($data) use ($self) {
-                $file = VirtualFile::create($data, $self->domain, $self->token, $self->client);
-                return [$file->getInternalName() => $file];
+                $file = VirtualFile::create($data, $self->domain, $self->token, $self->client, $self);
+                return [$file->getName() => $file];
             });
         }
 
@@ -52,15 +53,34 @@ class Directory extends VirtualFile
         return $this->getChildren($refresh);
     }
 
-    public function save()
+    public function download()
     {
-        $path = $this->buildPath($path) . DIRECTORY_SEPARATOR;
+        $this->createDirectory();
+
+        $dir = $this->path . DIRECTORY_SEPARATOR;
         $bytes = 0;
 
         foreach ($this->getChildren() as $file) {
-            $bytes += $file->save($path);
+            $bytes += $file->setPath($dir)->download();
         }
 
         return $bytes;
+    }
+
+    public function uploadFile($path)
+    {
+        $rfFile = new RfVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $path);
+        $properties = $this->client->CreateVirtualFile($rfFile, $path, $this->domain, $this->token);
+        $newFile = VirtualFile::create($properties, $this->domain, $this->token, $this->client, $this);
+        $this->children->put(basename($path), $newFile);
+        return $newFile;
+    }
+
+    protected function createDirectory()
+    {
+        if (!is_dir($this->path))
+        {
+            mkdir($this->path, 0777, true);
+        }
     }
 }

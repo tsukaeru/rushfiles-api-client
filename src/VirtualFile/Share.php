@@ -23,4 +23,9 @@ class Share extends Directory
     {
         return $this->properties['ShareTick'];
     }
+
+    public function getParent()
+    {
+        return null;
+    }
 }

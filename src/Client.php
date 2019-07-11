@@ -7,6 +7,9 @@ use GuzzleHttp\Psr7\Response;
 use function GuzzleHttp\json_decode;
 use Ramsey\Uuid\Uuid;
 use function GuzzleHttp\json_encode;
+use Tsukaeru\RushFiles\DTO\CreatePublicLink;
+use Tsukaeru\RushFiles\DTO\ClientJournal;
+use Tsukaeru\RushFiles\DTO\RfVirtualFile;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
 
@@ -16,6 +19,27 @@ class Client
      * Namespace used for generating device ids from device name.
      */
     const CLIENT_NAMESPACE_UUID = '8737930c-8f13-11e9-910b-7e7a262c9c6d';
+
+    const CODE = [
+        'DENIED_ACCESS' => 0,
+        'SUCCESS' => 1,
+        'CONFLICT' => 2,
+        'DUPLICATE' => 3,
+        'NO_REQUEST' => 4,
+        'NOT_YET_IMPLEMENTED' => 5,
+        'INSUFFICIENT_DATA' => 6,
+        'ALREAY_EXISTS' => 7,
+        'FAILED_TALKING_TO_SERVER' => 8,
+        'IGNORE_DELETE' => 9,
+        'ENTITY_NOT_FOUND' => 10,
+        'STORAGE_LIMIT_EXCEEDED' => 11,
+        'ILLEGAL_CHARACTERS' => 12,
+        'PARENT_NOT_FOUND' => 13,
+        'JOURNAL_ALREADY_EXISTS' => 14,
+        'FILE_IS_LOCKED' => 15,
+        'BAD_RANGE' => 16,
+        'MISSING_CREATE_EVENT' =>17,
+    ];
 
     /**
      * @var GuzzleHttp\Client
@@ -156,6 +180,20 @@ class Client
         return $data['Data'];
     }
 
+    public function GetFile($shareId, $internalName, $domain, $token)
+    {
+        try {
+            $request = new Request('GET', $this->VirtualFileURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not retrieve data about virtual file.");
+        }
+
+        $data = json_decode($response->getBody(), true);
+
+        return VirtualFile::create($data['Data'], $domain, $token, $this);
+    }
+
     public function GetDomainTokens($username, $password, $domain)
     {
         $loginData = [
@@ -192,8 +230,106 @@ class Client
         return $response->getBody();
     }
 
+    public function CreateVirtualFile(RfVirtualFile $rfFile, $path, $domain, $token)
+    {
+        $journal = new ClientJournal($rfFile, ClientJournal::CREATE, $this->getDeviceId());
+
+        $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
+
+        try {
+            $request = new Request('POST', $this->FilesURL($domain, $rfFile->getShareId()), $headers, json_encode($journal));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
+        }
+
+        $data = json_decode($response->getBody(), true);
+
+        $uploadURL = $data['Data']['Url'];
+
+        if ($uploadURL) {
+            $this->uploadFileContents($uploadURL, $token, $path);
+        }
+
+        return $this->GetFile($rfFile->getShareId(), $rfFile->getInternalName(), $domain, $token);
+    }
+
+    public function UpdateVirtualFile($shareId, $parentId, $internalName, $path, $domain, $token)
+    {
+        $fileProperties = [
+            'InternalName' => $internalName,
+            'ShareId' => $shareId,
+            'ParrentId' => $parentId,
+            'EndOfFile' => is_file($path) ? filesize($path) : 0,
+            'PublicName' => basename($path),
+            'Attributes' => is_dir($path) ? self::FILE_ATTRIBUTES['DIRECTORY'] : self::FILE_ATTRIBUTES['NORMAL'],
+            'CreationTime' => date('c', filectime($path)),
+            'LastAccessTime' => date('c', fileatime($path)),
+            'LastWriteTime' => date('c', filemtime($path)),
+            'Tick' => 1,
+        ];
+
+        $journal = [
+            'RfVirtualFile' => $fileProperties,
+            'TransmitId' => Uuid::uuid1(),
+            'ClientJournalEventType' => self::CLIENT_JOURNAL_EVENT_TYPE['UPDATE'],
+            'DeviceId' => $this->getDeviceId(),
+        ];
+
+        $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
+
+        try {
+            $request = new Request('PUT', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
+        }
+
+        $data = json_decode($response->getBody(), true);
+
+        $uploadURL = $data['Data']['Url'];
+
+        if ($uploadURL) {
+            $this->uploadFileContents($uploadURL, $token, $path);
+        }
+
+        return $this->GetFile($shareId, $fileProperties['InternalName'], $domain, $token);
+    }
+
+    public function DeleteVirtualFile($shareId, $internalName, $domain, $token)
+    {
+        $journal = [
+            'TransmitId' => Uuid::uuid1(),
+            'ClientJournalEventType' => self::CLIENT_JOURNAL_EVENT_TYPE['DELETE'],
+            'DeviceId' => $this->getDeviceId(),
+        ];
+
+        $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
+
+        try {
+            $request = new Request('DELETE', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not delete file.");
+        }
+    }
 
 
+
+    private function uploadFileContents($url, $token, $path)
+    {
+        $size = filesize($path);
+        $headers = array_merge([
+            'Content-Range' => 'bytes 0-' . ($size - 1) . '/' . $size,
+        ], $this->AuthHeaders($token));
+
+        try {
+            $request = new Request('PUT', $url, $headers, fopen($path, 'r'));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Count not upload file's contents.");
+        }
+    }
 
     private function throwException(Response $response, $msg = "Request error.")
     {
@@ -246,8 +382,19 @@ class Client
         return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$internalName/children";
     }
 
+    private function VirtualFileURL($domain, $shareId, $internalName)
+    {
+        return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$internalName";
+    }
+
     private function FileURL($domain, $shareId, $uploadName)
     {
         return "https://filecache01.$domain/api/shares/$shareId/files/$uploadName";
     }
+
+    private function FilesURL($domain, $shareId)
+    {
+        return "https://filecache01.$domain/api/shares/$shareId/files";
+    }
+
 }

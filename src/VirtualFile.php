@@ -34,19 +34,30 @@ abstract class VirtualFile
     /**
      * @var string
      */
+    protected $path = './';
+
+    /**
+     * @var string
+     */
     protected $content;
 
     /**
-     * @var Tsukaeru\RushFiles\Client
+     * @var Tsukaeru\RushFiles\VirtualFile
+     */
+    protected $parent;
+
+    /**
+     * @var Client
      */
     protected $client;
 
-    public function __construct(array $rawData, string $domain, string $token, Client $client)
+    public function __construct($rawData, $domain, $token, Client $client, VirtualFile $parent = null)
     {
-        $this->properties = $rawData;
+        $this->properties = collect($rawData);
         $this->domain = $domain;
         $this->token = $token;
         $this->client = $client;
+        $this->parent = $parent;
     }
 
     public static function create($rawData, $domain, $token, Client $client, VirtualFile $parent = null)
@@ -97,19 +108,38 @@ abstract class VirtualFile
 
     abstract public function getContent($refresh = false);
 
-    abstract public function save(string $path) : int;
+    abstract public function download();
 
-    protected function buildPath($path)
+    public function getParent()
     {
-        $path = trim($path);
-
-        if ($path[-1] === DIRECTORY_SEPARATOR) $path .= $this->getName();
-
-        if (!is_dir(dirname($path)))
-        {
-            mkdir(dirname($path), 0777, true);
+        if ($this->parent === null && $this->getShareId() !== $this->getInternalName()) {
+            $this->parent = $this->client->GetFile($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
+            // TODO: Do I need a special path for shares?
         }
 
-        return $path;
+        return $this->parent;
+    }
+
+    public function delete()
+    {
+        $this->client->DeleteVirtualFile($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
+
+        if ($this->parent && $this->parent->children) {
+            $this->parent->children->forget($this->getName());
+        }
+    }
+
+    public function setPath($path)
+        {
+        $this->path = trim($path);
+
+        if ($this->path[-1] === DIRECTORY_SEPARATOR) $this->path .= $this->getName();
+
+        return $this;
+        }
+
+    public function getPath()
+    {
+        return $this->path;
     }
 }
