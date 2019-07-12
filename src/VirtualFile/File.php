@@ -6,21 +6,33 @@ use Tsukaeru\RushFiles\VirtualFile;
 
 class File extends VirtualFile
 {
+    /**
+     * @inheritDoc
+     */
     public function isFile()
     {
         return true;
     }
 
+    /**
+     * @return string
+     */
     public function getUploadName()
     {
         return $this->properties->get('UploadName');
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getSize()
     {
         return $this->properties['EndOfFile'];
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getContent($refresh = false)
     {
         if ($this->content === null || $refresh)
@@ -35,6 +47,11 @@ class File extends VirtualFile
         return $this->content;
     }
 
+    /**
+     * Downloads file and saves it to set up path.
+     *
+     * @inheritDoc
+     */
     public function download()
     {
         $this->createDirectory();
@@ -54,6 +71,9 @@ class File extends VirtualFile
         $this->properties = $this->client->UpdateVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $this->getInternalName(), $path, $this->domain, $this->token);
     }
 
+    /**
+     * Create directory for a file.
+     */
     protected function createDirectory()
     {
         if (!is_dir(dirname($this->path)))

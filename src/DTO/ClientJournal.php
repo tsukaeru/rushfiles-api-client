@@ -22,6 +22,12 @@ class ClientJournal extends BaseDTO
     const LOCK_FILE            = 13;
     const UNLOCK_FILE          = 14;
 
+    /**
+     * @param RfVirtualFile $RfVirtualFile
+     * @param int $EventType
+     * @param string $DeviceId
+     * @param array $properties
+     */
     public function __construct(RfVirtualFile $RfVirtualFile, $EventType, $DeviceId, $properties = [])
     {
         if ($EventType < 0 || $EventType > 14) {

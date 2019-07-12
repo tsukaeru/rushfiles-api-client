@@ -62,6 +62,9 @@ class Client
      */
     private $deviceId = 'dae9022f-96c2-52fa-8aa1-d758a22759cc';
 
+    /**
+     * @var array
+     */
     private $defaultHeaders = [
         'Accept' => 'application/json',
         'Content-Type' => 'application/json',
@@ -75,6 +78,11 @@ class Client
         $this->client = new HttpClient();
     }
 
+    /**
+     * @param string $deviceName
+     *
+     * @return self
+     */
     public function setDeviceName($deviceName)
     {
         $this->deviceName = $deviceName;
@@ -83,16 +91,25 @@ class Client
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getDeviceName()
     {
         return $this->deviceName;
     }
 
+    /**
+     * @return string
+     */
     public function getDeviceId()
     {
         return $this->deviceId;
     }
 
+    /**
+     * @param \GuzzleHttp\Client $client
+     */
     public function setHttpClient(HttpClient $client)
     {
         $this->client = $client;
@@ -103,6 +120,12 @@ class Client
     /**
      * Automates getting user's domain, registering device and retrieving tokens,
      * and packs everything into User object.
+     *
+     * @param string $username
+     * @param string $password
+     * @param string $domain
+     *
+     * @return User
      */
     public function Login($username, $password, $domain = null)
     {
@@ -117,6 +140,11 @@ class Client
         return new User($username, $tokens, $this);
     }
 
+    /**
+     * @param string $username
+     *
+     * @return string
+     */
     public function GetUserDomain($username)
     {
         $request = new Request('GET', $this->UserDomainURL($username));
@@ -131,6 +159,10 @@ class Client
      * Subsequent calls won't cause errors so it can be called every time, or invocation
      * can be remembered not to make needless calls.
      * This client does not keep track of registration on itself.
+     *
+     * @param string $username
+     * @param string $password
+     * @param string $domain
      */
     public function RegisterDevice($username, $password, $domain)
     {
@@ -148,10 +180,15 @@ class Client
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not register device.");
         }
-
-        json_decode($response->getBody());
     }
 
+    /**
+     * @param string $username
+     * @param string $token
+     * @param string $domain
+     *
+     * @return array
+     */
     public function GetUserShares($username, $token, $domain)
     {
         try {
@@ -166,6 +203,14 @@ class Client
         return $data['Data'];
     }
 
+    /**
+     * @param string $shareId
+     * @param string $internalName
+     * @param string $domain
+     * @param string $token
+     *
+     * @return array
+     */
     public function GetDirectoryChildren($shareId, $internalName, $domain, $token)
     {
         try {
@@ -180,6 +225,14 @@ class Client
         return $data['Data'];
     }
 
+    /**
+     * @param string $shareId
+     * @param string $internalName
+     * @param string $domain
+     * @param string $token
+     *
+     * @return VirtualFile
+     */
     public function GetFile($shareId, $internalName, $domain, $token)
     {
         try {
@@ -194,6 +247,13 @@ class Client
         return VirtualFile::create($data['Data'], $domain, $token, $this);
     }
 
+    /**
+     * @param string $username
+     * @param string $password
+     * @param string $domain
+     *
+     * @return array
+     */
     public function GetDomainTokens($username, $password, $domain)
     {
         $loginData = [
@@ -217,6 +277,11 @@ class Client
     }
 
     /**
+     * @param string $shareId
+     * @param string $uploadName
+     * @param string $domain
+     * @param string $token
+     *
      * @return StreamInterface|string
      */
     public function GetFileContent($shareId, $uploadName, $domain, $token)
@@ -230,6 +295,14 @@ class Client
         return $response->getBody();
     }
 
+    /**
+     * @param RfVirtualFile $rfFile
+     * @param string $path Path to file/directory to be uploaded/created
+     * @param string $domain
+     * @param string $token
+     *
+     * @return VirtualFile
+     */
     public function CreateVirtualFile(RfVirtualFile $rfFile, $path, $domain, $token)
     {
         $journal = new ClientJournal($rfFile, ClientJournal::CREATE, $this->getDeviceId());
@@ -254,6 +327,16 @@ class Client
         return $this->GetFile($rfFile->getShareId(), $rfFile->getInternalName(), $domain, $token);
     }
 
+    /**
+     * @param string $shareId
+     * @param string $parentId
+     * @param string $internalName
+     * @param string $path Path to file/directory to be updated
+     * @param string $domain
+     * @param string $token
+     *
+     * @return VirtualFile
+     */
     public function UpdateVirtualFile($shareId, $parentId, $internalName, $path, $domain, $token)
     {
         $fileProperties = [
@@ -296,6 +379,12 @@ class Client
         return $this->GetFile($shareId, $fileProperties['InternalName'], $domain, $token);
     }
 
+    /**
+     * @param string $shareId
+     * @param string $internalName
+     * @param string $domain
+     * @param string $token
+     */
     public function DeleteVirtualFile($shareId, $internalName, $domain, $token)
     {
         $journal = [
@@ -314,6 +403,14 @@ class Client
         }
     }
 
+    /**
+     * @param string $shareId
+     * @param string $virtualFileId
+     * @param string $domain
+     * @param string $token
+     *
+     * @return array
+     */
     public function GetPublicLinks($shareId, $virtualFileId, $domain, $token)
     {
         try {
@@ -328,6 +425,13 @@ class Client
         return $body['Data'];
     }
 
+    /**
+     * @param CreatePublicLink $linkDto
+     * @param string $domain
+     * @param string $token
+     *
+     * @return array
+     */
     public function CreatePublicLink(CreatePublicLink $linkDto, $domain, $token)
     {
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
@@ -344,6 +448,13 @@ class Client
         return $body['Data']['FullLink'];
     }
 
+    /**
+     * @param string $id
+     * @param string $domain
+     * @param string $token
+     *
+     * @return array
+     */
     public function GetPublicLink($id, $domain, $token)
     {
         try {
@@ -358,6 +469,11 @@ class Client
         return $body['Data'];
     }
 
+    /**
+     * @param string $url
+     * @param string $token
+     * @param string $path
+     */
     private function uploadFileContents($url, $token, $path)
     {
         $size = filesize($path);
@@ -373,6 +489,12 @@ class Client
         }
     }
 
+    /**
+     * @param Response $response
+     * @param string $msg
+     *
+     * @throws \Exception
+     */
     private function throwException(Response $response, $msg = "Request error.")
     {
         $msg .= " HTTP Status Code: {$response->getStatusCode()}";

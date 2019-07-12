@@ -57,6 +57,13 @@ abstract class VirtualFile
      */
     protected $client;
 
+    /**
+     * @param array $rawData properties returned by RushFiles API
+     * @param string $domain domain from where the virtual file was taken
+     * @param string $token  domain token
+     * @param Client $client RushFiles API Client object
+     * @param VirtualFile|null $parent parent of the file
+     */
     public function __construct($rawData, $domain, $token, Client $client, VirtualFile $parent = null)
     {
         $this->properties = collect($rawData);
@@ -66,6 +73,9 @@ abstract class VirtualFile
         $this->parent = $parent;
     }
 
+    /**
+     * @see VirtualFile::__construct
+     */
     public static function create($rawData, $domain, $token, Client $client, VirtualFile $parent = null)
     {
         if (Arr::get($rawData, 'IsFile') === true) {
@@ -83,39 +93,72 @@ abstract class VirtualFile
         throw new \InvalidArgumentException("Could not detect VirtualFile resource type from passed properties.");
     }
 
+    /**
+     * @return bool
+     */
     public function isDirectory()
     {
         return !$this->isFile();
     }
 
+    /**
+     * @return bool
+     */
     abstract public function isFile();
 
+    /**
+     * @return string
+     */
     public function getInternalName()
     {
         return $this->properties['InternalName'];
     }
 
+    /**
+     * @return string
+     */
     public function getName()
     {
         return $this->properties['PublicName'];
     }
 
+    /**
+     * @return string
+     */
     public function getShareId()
     {
         return $this->properties['ShareId'];
     }
 
+    /**
+     * @return int
+     */
     public function getTick()
     {
         return $this->properties['Tick'];
     }
 
+    /**
+     * @return int
+     */
     abstract public function getSize();
 
+    /**
+     * @param bool $refresh Force reload content
+     * @return string|array
+     */
     abstract public function getContent($refresh = false);
 
+    /**
+     * @return int Number of bytes written
+     *
+     * @throws \Exception
+     */
     abstract public function download();
 
+    /**
+     * @return Directory|null
+     */
     public function getParent()
     {
         if ($this->parent === null && $this->getShareId() !== $this->getInternalName()) {
@@ -135,6 +178,10 @@ abstract class VirtualFile
         }
     }
 
+    /**
+     * @param bool $refresh
+     * @return array
+     */
     public function getPublicLinks($refresh = false)
     {
         if ($this->links !== null || $refresh)
@@ -148,6 +195,12 @@ abstract class VirtualFile
         return $this->links;
     }
 
+    /**
+     * @param array|string $config @see https://clientgateway.rushfiles.com/swagger/ui/index#!/PublicLink/PublicLink_CreatePublicLink
+     * @param string $fetch either PublicLink::OBJECT or PublicLink::STRING
+     *
+     * @throws \Exception
+     */
     public function createPublicLink($config = [], $fetch = PublicLink::OBJECT)
     {
         if (is_string($config)) {
@@ -176,6 +229,10 @@ abstract class VirtualFile
         return $link;
     }
 
+    /**
+     * @param string
+     * @return VirtualFile
+     */
     public function setPath($path)
     {
         $this->path = trim($path);
@@ -185,6 +242,9 @@ abstract class VirtualFile
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getPath()
     {
         return $this->path;

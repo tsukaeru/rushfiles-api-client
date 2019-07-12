@@ -8,6 +8,11 @@ use Tsukaeru\RushFiles\DTO\RfVirtualFile;
 
 class Directory extends VirtualFile
 {
+    /**
+     * @param bool $refresh Force reload data about directory contents
+     *
+     * @return VirtualFile[]
+     */
     public function getChildren($refresh = false)
     {
         if ($this->children === null || $refresh)
@@ -24,6 +29,9 @@ class Directory extends VirtualFile
         return $this->children;
     }
 
+    /**
+     * @return File[]
+     */
     public function getFiles()
     {
         return $this->getChildren()->filter(function ($item) {
@@ -31,6 +39,9 @@ class Directory extends VirtualFile
         });
     }
 
+    /**
+     * @return Directory[]
+     */
     public function getDirectories()
     {
         return $this->getChildren()->filter(function ($item) {
@@ -38,21 +49,37 @@ class Directory extends VirtualFile
         });
     }
 
+    /**
+     * @inheritDoc
+     */
     public function isFile()
     {
         return false;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getSize()
     {
         return $this->getChildren()->count();
     }
 
+    /**
+     * Get array of files and folders in directory.
+     *
+     * @inheritDoc
+     */
     public function getContent($refresh = false)
     {
         return $this->getChildren($refresh);
     }
 
+    /**
+     * Recursively download folder and all its contents to set path.
+     *
+     * @inheritDoc
+     */
     public function download()
     {
         $this->createDirectory();
@@ -67,6 +94,13 @@ class Directory extends VirtualFile
         return $bytes;
     }
 
+    /**
+     * Upload local file to RF directory
+     *
+     * @param string $path Path to local file
+     *
+     * @return File
+     */
     public function uploadFile($path)
     {
         $rfFile = new RfVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $path);

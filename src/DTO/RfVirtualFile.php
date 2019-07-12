@@ -52,16 +52,25 @@ class RfVirtualFile extends BaseDTO
         ], $file);
     }
 
+    /**
+     * @return string
+     */
     public function getShareId()
     {
         return $this->properties['ShareId'];
     }
 
+    /**
+     * @return string
+     */
     public function getParentId()
     {
         return $this->properties['ParentId'];
     }
 
+    /**
+     * @return string
+     */
     public function getInternalName()
     {
         return $this->properties['InternalName'];

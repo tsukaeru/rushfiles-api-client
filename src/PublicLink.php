@@ -17,6 +17,9 @@ class PublicLink
         $this->properties = collect($rawData);
     }
 
+    /**
+     * @return string
+     */
     public function getId()
     {
         return $this->properties->get('Id');

@@ -26,6 +26,11 @@ class User
      */
     protected $client;
 
+    /**
+     * @param string $username
+     * @param array $tokens domain=>domainToken array
+     * @param Client $client API Client used for connection
+     */
     public function __construct($username, $tokens, Client $client)
     {
         $this->username = $username;
@@ -41,21 +46,36 @@ class User
         $this->client = $client;
     }
 
+    /**
+     * @return string
+     */
     public function getUsername()
     {
         return $this->username;
     }
 
+    /**
+     * @return array
+     */
     public function getDomains()
     {
         return $this->domainTokens->keys();
     }
 
+    /**
+     * Returns domainToken for the domain or first available token if domain is not specified.
+     * (user can often have shares on only one domain and then there is no need to specify it)
+     *
+     * @return string
+     */
     public function getToken($domain = null)
     {
         return $domain ? $this->domainTokens->get($domain) : $this->domainTokens->first();
     }
 
+    /**
+     * @return array
+     */
     public function getShares()
     {
         if ($this->shares === null)
@@ -74,6 +94,9 @@ class User
         return $this->shares;
     }
 
+    /**
+     * @return Share
+     */
     public function getShare($id)
     {
         return $this->getShares()->get($id);
