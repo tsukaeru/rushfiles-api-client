@@ -3,6 +3,7 @@
 namespace Tsukaeru\RushFiles\DTO;
 
 use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Collection;
 
 class ClientJournal extends BaseDTO
 {
@@ -34,11 +35,11 @@ class ClientJournal extends BaseDTO
             throw new \InvalidArgument("EventType must be an enum between 0 and 14.");
         }
 
-        $this->properties = array_merge([
+        $this->properties = Collection::make([
             'RfVirtualFile' => $RfVirtualFile,
             'TransmitId' => Uuid::uuid1(),
             'ClientJournalEventType' => $EventType,
             'DeviceId' => $DeviceId,
-        ], $properties);
+        ])->merge($properties);
     }
 }

@@ -3,11 +3,12 @@
 namespace Tsukaeru\RushFiles\DTO;
 
 use function GuzzleHttp\json_encode;
+use Illuminate\Support\Collection;
 
 class BaseDTO
 {
     /**
-     * @var array
+     * @var Collection
      */
     protected $properties;
 
@@ -16,7 +17,7 @@ class BaseDTO
      */
     public function getData()
     {
-        return $this->properties;
+        return $this->properties->all();
     }
 
     /**
@@ -24,6 +25,6 @@ class BaseDTO
      */
     public function getJSON()
     {
-        return json_encode($this->properties);
+        return json_encode($this->getData());
     }
 }

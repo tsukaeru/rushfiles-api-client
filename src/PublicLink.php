@@ -2,6 +2,8 @@
 
 namespace Tsukaeru\RushFiles;
 
+use Illuminate\Support\Collection;
+
 class PublicLink
 {
     public const STRING = 'string';
@@ -14,7 +16,7 @@ class PublicLink
 
     public function __construct($rawData)
     {
-        $this->properties = collect($rawData);
+        $this->properties = Collection::make($rawData);
     }
 
     /**

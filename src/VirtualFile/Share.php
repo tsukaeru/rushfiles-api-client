@@ -9,7 +9,7 @@ class Share extends Directory
      */
     public function getInternalName()
     {
-        return $this->properties['Id'];
+        return $this->properties->get('Id');
     }
 
     /**
@@ -17,7 +17,7 @@ class Share extends Directory
      */
     public function getName()
     {
-        return $this->properties['Name'];
+        return $this->properties->get('Name');
     }
 
     /**
@@ -25,7 +25,7 @@ class Share extends Directory
      */
     public function getShareId()
     {
-        return $this->properties['Id'];
+        return $this->properties->get('Id');
     }
 
     /**
@@ -33,7 +33,7 @@ class Share extends Directory
      */
     public function getTick()
     {
-        return $this->properties['ShareTick'];
+        return $this->properties->get('ShareTick');
     }
 
     /**

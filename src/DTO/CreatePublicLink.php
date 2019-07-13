@@ -2,6 +2,8 @@
 
 namespace Tsukaeru\RushFiles\DTO;
 
+use Illuminate\Support\Collection;
+
 class CreatePublicLink extends BaseDTO
 {
     /**
@@ -11,12 +13,12 @@ class CreatePublicLink extends BaseDTO
      */
     public function __construct($ShareId, $InternalName, $properties = [])
     {
-        $this->properties = collect(array_merge($properties, [
+        $this->properties = Collection::make(array_merge($properties, [
             'ShareId' => $ShareId,
             'InternalName' => $InternalName,
         ]));
 
-        $this->setPassword(collect($properties)->get('Password'));
+        $this->setPassword($this->properties->get('Password'));
     }
 
     /**

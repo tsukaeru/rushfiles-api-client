@@ -39,11 +39,11 @@ class VirtualFileTest extends TestCase
 
         $files = $share->getFiles();
         $this->assertEquals(1, count($files));
-        $this->assertEquals('file', $files->first()->getInternalName());
+        $this->assertEquals('file', $files['file']->getInternalName());
 
         $dirs = $share->getDirectories();
         $this->assertEquals(1, count($dirs));
-        $this->assertEquals('dir', $dirs->first()->getInternalName());
+        $this->assertEquals('dir', $dirs['dir']->getInternalName());
     }
 
     public function testGetContent()

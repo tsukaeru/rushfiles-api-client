@@ -3,6 +3,7 @@
 namespace Tsukaeru\RushFiles\DTO;
 
 use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Collection;
 
 class RfVirtualFile extends BaseDTO
 {
@@ -45,11 +46,11 @@ class RfVirtualFile extends BaseDTO
             throw new \InvalidParameter("file parameter is neither an array nor path to en existing file.");
         }
 
-        $this->properties = array_merge([
+        $this->properties = Collection::make([
             'ShareId' => $shareId,
             'ParentId' => $parentId,
             'InternalName' => Uuid::uuid1(),
-        ], $file);
+        ])->merge($file);
     }
 
     /**
@@ -57,7 +58,7 @@ class RfVirtualFile extends BaseDTO
      */
     public function getShareId()
     {
-        return $this->properties['ShareId'];
+        return $this->properties->get('ShareId');
     }
 
     /**
@@ -65,7 +66,7 @@ class RfVirtualFile extends BaseDTO
      */
     public function getParentId()
     {
-        return $this->properties['ParentId'];
+        return $this->properties->get('ParentId');
     }
 
     /**
@@ -73,6 +74,6 @@ class RfVirtualFile extends BaseDTO
      */
     public function getInternalName()
     {
-        return $this->properties['InternalName'];
+        return $this->properties->get('InternalName');
     }
 }

@@ -3,6 +3,7 @@
 namespace Tsukaeru\RushFiles;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 class User
 {
@@ -12,7 +13,7 @@ class User
     protected $username = '';
 
     /**
-     * @var array
+     * @var Collection
      */
     protected $domainTokens = [];
 
@@ -22,7 +23,7 @@ class User
     protected $shares = null;
 
     /**
-     * @var Tsukaeru\RushFiles\Client
+     * @var Client
      */
     protected $client;
 
@@ -36,9 +37,9 @@ class User
         $this->username = $username;
 
         if (Arr::isAssoc($tokens)) {
-            $this->domainTokens = collect($tokens);
+            $this->domainTokens = Collection::make($tokens);
         } else {
-            $this->domainTokens = collect($tokens)->mapWithKeys(function ($data) {
+            $this->domainTokens = Collection::make($tokens)->mapWithKeys(function ($data) {
                 return [$data['DomainUrl'] => $data['DomainToken']];
             });
         }
@@ -80,15 +81,13 @@ class User
     {
         if ($this->shares === null)
         {
-            $this->shares = collect();
-            foreach ($this->domainTokens as $domain => $token) {
+            $self = $this;
+            $this->shares = $this->domainTokens->flatMap(function ($token, $domain) use ($self) {
                 $rawShares = $this->client->GetUserShares($this->username, $token, $domain);
-                $self = $this;
-                $objShares = collect($rawShares)->mapWithKeys(function ($data) use ($domain, $token, $self) {
+                return collect($rawShares)->mapWithKeys(function ($data) use ($domain, $token, $self) {
                     return [$data['Id'] => VirtualFile::create($data, $domain, $token, $self->client)];
                 });
-                $this->shares = $this->shares->merge($objShares);
-            }
+            });
         }
 
         return $this->shares;

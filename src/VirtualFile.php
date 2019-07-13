@@ -18,7 +18,7 @@ abstract class VirtualFile
     protected $children = null;
 
     /**
-     * @var array raw properties from API
+     * @var Collection raw properties from API
      */
     protected $properties;
 
@@ -43,12 +43,12 @@ abstract class VirtualFile
     protected $content;
 
     /**
-     * @var Tightenco\Collect\Support\Collection
+     * @var Collection
      */
     protected $links;
 
     /**
-     * @var Tsukaeru\RushFiles\VirtualFile
+     * @var Directory
      */
     protected $parent;
 
@@ -66,7 +66,7 @@ abstract class VirtualFile
      */
     public function __construct($rawData, $domain, $token, Client $client, VirtualFile $parent = null)
     {
-        $this->properties = collect($rawData);
+        $this->properties = Collection::make($rawData);
         $this->domain = $domain;
         $this->token = $token;
         $this->client = $client;
@@ -111,7 +111,7 @@ abstract class VirtualFile
      */
     public function getInternalName()
     {
-        return $this->properties['InternalName'];
+        return $this->properties->get('InternalName');
     }
 
     /**
@@ -119,7 +119,7 @@ abstract class VirtualFile
      */
     public function getName()
     {
-        return $this->properties['PublicName'];
+        return $this->properties->get('PublicName');
     }
 
     /**
@@ -127,7 +127,7 @@ abstract class VirtualFile
      */
     public function getShareId()
     {
-        return $this->properties['ShareId'];
+        return $this->properties->get('ShareId');
     }
 
     /**
@@ -135,7 +135,7 @@ abstract class VirtualFile
      */
     public function getTick()
     {
-        return $this->properties['Tick'];
+        return $this->properties->get('Tick');
     }
 
     /**
@@ -187,12 +187,12 @@ abstract class VirtualFile
         if ($this->links !== null || $refresh)
         {
             $linksRaw = $this->client->GetPublicLinks($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
-            $this->links = collect($linksRaw)->map(function ($data) {
+            $this->links = Collection::make($linksRaw)->map(function ($data) {
                 return new PublicLink($data);
             });
         }
 
-        return $this->links;
+        return $this->links->all();
     }
 
     /**
@@ -211,20 +211,21 @@ abstract class VirtualFile
         $dto = new CreatePublicLink($this->getShareId(), $this->getInternalName(), $config);
         $link = $this->client->CreatePublicLink($dto, $this->domain, $this->token);
 
-        if ($fetch === PublicLink::OBJECT) {
-            $id = [];
-            preg_match("/id=([[:alnum:]]*)/", $link, $id);
-            $id = $id[1];
-
-            $links = $this->getPublicLinks(true);
-            foreach ($links as $link) {
-                if ($link->getId() === $id) {
-                    return $link;
-                }
-            }
-
-            throw new \Exception("New public link could not be found.");
+        if ($fetch === PublicLink::STRING) {
+            return $link;
         }
+
+        // Caller requested object
+        $id = [];
+        preg_match("/id=([[:alnum:]]*)/", $link, $id);
+        $id = $id[1];
+
+        $link = Collection::make($this->getPublicLinks(true))->first(function($link) use ($id) {
+            return $id === $link->getId();
+        });
+
+        if ($link === null)
+            throw new \Exception("New public link could not be found.");
 
         return $link;
     }

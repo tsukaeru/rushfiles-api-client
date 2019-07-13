@@ -20,13 +20,13 @@ class Directory extends VirtualFile
             $rawData = $this->client->GetDirectoryChildren($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
 
             $self = $this;
-            $this->children = collect($rawData)->mapWithKeys(function ($data) use ($self) {
+            $this->children = Collection::make($rawData)->mapWithKeys(function ($data) use ($self) {
                 $file = VirtualFile::create($data, $self->domain, $self->token, $self->client, $self);
                 return [$file->getName() => $file];
             });
         }
 
-        return $this->children;
+        return $this->children->all();
     }
 
     /**
@@ -34,9 +34,9 @@ class Directory extends VirtualFile
      */
     public function getFiles()
     {
-        return $this->getChildren()->filter(function ($item) {
+        return Collection::make($this->getChildren())->filter(function ($item) {
             return $item->isFile();
-        });
+        })->all();
     }
 
     /**
@@ -44,9 +44,9 @@ class Directory extends VirtualFile
      */
     public function getDirectories()
     {
-        return $this->getChildren()->filter(function ($item) {
+        return Collection::make($this->getChildren())->filter(function ($item) {
             return $item->isDirectory();
-        });
+        })->all();
     }
 
     /**
@@ -62,7 +62,7 @@ class Directory extends VirtualFile
      */
     public function getSize()
     {
-        return $this->getChildren()->count();
+        return count($this->getChildren());
     }
 
     /**
@@ -99,7 +99,7 @@ class Directory extends VirtualFile
      *
      * @param string $path Path to local file
      *
-     * @return File
+     * @return VirtualFile
      */
     public function uploadFile($path)
     {

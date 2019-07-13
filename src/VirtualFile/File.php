@@ -27,7 +27,7 @@ class File extends VirtualFile
      */
     public function getSize()
     {
-        return $this->properties['EndOfFile'];
+        return $this->properties->get('EndOfFile');
     }
 
     /**
@@ -60,7 +60,7 @@ class File extends VirtualFile
 
         if ($bytes === false)
         {
-            throw new \Exception("Error saving file {$this->properties['PublicName']} to $path"); // @codeCoverageIgnore
+            throw new \Exception("Error saving file {$this->properties->get('PublicName')} to $path"); // @codeCoverageIgnore
         }
 
         return $bytes;
@@ -68,7 +68,8 @@ class File extends VirtualFile
 
     public function upload($path)
     {
-        $this->properties = $this->client->UpdateVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $this->getInternalName(), $path, $this->domain, $this->token);
+        $newFile = $this->client->UpdateVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $this->getInternalName(), $path, $this->domain, $this->token);
+        $this->properties = $newFile->properties;
     }
 
     /**
