@@ -9,7 +9,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Tsukaeru\\RushFiles\\": "src"
+            "RushFiles\\": "src"
         }
     },
     "config":{

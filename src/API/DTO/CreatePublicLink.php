@@ -1,6 +1,6 @@
 <?php
 
-namespace Tsukaeru\RushFiles\DTO;
+namespace RushFiles\API\DTO;
 
 use Illuminate\Support\Collection;
 

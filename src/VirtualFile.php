@@ -1,14 +1,14 @@
 <?php
 
-namespace Tsukaeru\RushFiles;
+namespace RushFiles;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Arr;
-use GuzzleHttp\Psr7\Stream;
-use Tsukaeru\RushFiles\VirtualFile\File;
-use Tsukaeru\RushFiles\VirtualFile\Directory;
-use Tsukaeru\RushFiles\VirtualFile\Share;
-use Tsukaeru\RushFiles\DTO\CreatePublicLink;
+use RushFiles\VirtualFile\File;
+use RushFiles\VirtualFile\Directory;
+use RushFiles\VirtualFile\Share;
+use RushFiles\API\DTO\CreatePublicLink;
+use RushFiles\API\Client;
 
 abstract class VirtualFile
 {

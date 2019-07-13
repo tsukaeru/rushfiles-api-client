@@ -1,7 +1,7 @@
 <?php
 use PHPUnit\Framework\TestCase;
-use Tsukaeru\RushFiles\Client;
-use Tsukaeru\RushFiles\User;
+use RushFiles\API\Client;
+use RushFiles\User;
 
 class UserTest extends TestCase
 {

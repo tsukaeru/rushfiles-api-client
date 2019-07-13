@@ -5,12 +5,12 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
-use Tsukaeru\RushFiles\Client;
+use RushFiles\API\Client;
 use function GuzzleHttp\json_encode;
 use function GuzzleHttp\json_decode;
-use Tsukaeru\RushFiles\User;
+use RushFiles\User;
 use GuzzleHttp\Client as GuzzleClient;
-use Tsukaeru\RushFiles\VirtualFile;
+use RushFiles\VirtualFile;
 
 class ClientTest extends TestCase
 {
@@ -288,7 +288,7 @@ class ClientTest extends TestCase
     {
         $client = new Client;
 
-        $this->assertEquals('Tsukaeru\RushFiles', $client->getDeviceName());
+        $this->assertEquals('RushFiles\API', $client->getDeviceName());
 
         $client->setDeviceName('TestName');
 

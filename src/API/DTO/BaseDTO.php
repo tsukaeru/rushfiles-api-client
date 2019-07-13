@@ -1,6 +1,6 @@
 <?php
 
-namespace Tsukaeru\RushFiles\DTO;
+namespace RushFiles\API\DTO;
 
 use function GuzzleHttp\json_encode;
 use Illuminate\Support\Collection;

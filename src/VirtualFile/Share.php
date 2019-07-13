@@ -1,6 +1,6 @@
 <?php
 
-namespace Tsukaeru\RushFiles\VirtualFile;
+namespace RushFiles\VirtualFile;
 
 class Share extends Directory
 {

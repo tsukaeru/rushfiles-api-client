@@ -1,11 +1,11 @@
 <?php
 use PHPUnit\Framework\TestCase;
-use Tsukaeru\RushFiles\VirtualFile;
-use Tsukaeru\RushFiles\Client;
+use RushFiles\VirtualFile;
+use RushFiles\API\Client;
 use org\bovigo\vfs\vfsStream;
-use Tsukaeru\RushFiles\VirtualFile\File;
-use Tsukaeru\RushFiles\VirtualFile\Directory;
-use Tsukaeru\RushFiles\VirtualFile\Share;
+use RushFiles\VirtualFile\File;
+use RushFiles\VirtualFile\Directory;
+use RushFiles\VirtualFile\Share;
 
 class VirtualFileTest extends TestCase
 {

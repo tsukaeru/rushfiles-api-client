@@ -1,17 +1,19 @@
 <?php
 
-namespace Tsukaeru\RushFiles;
+namespace RushFiles\API;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use function GuzzleHttp\json_decode;
 use Ramsey\Uuid\Uuid;
 use function GuzzleHttp\json_encode;
-use Tsukaeru\RushFiles\DTO\CreatePublicLink;
-use Tsukaeru\RushFiles\DTO\ClientJournal;
-use Tsukaeru\RushFiles\DTO\RfVirtualFile;
+use RushFiles\API\DTO\CreatePublicLink;
+use RushFiles\API\DTO\ClientJournal;
+use RushFiles\API\DTO\RfVirtualFile;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
+use RushFiles\User;
+use RushFiles\VirtualFile;
 
 class Client
 {
@@ -49,7 +51,7 @@ class Client
     /**
      * @var string
      */
-    protected $deviceName = 'Tsukaeru\RushFiles';
+    protected $deviceName = 'RushFiles\API';
 
     /**
      * @var string
@@ -512,7 +514,7 @@ class Client
     }
 
     /**
-     * @param string|Tsukaeru\RushFiles\User
+     * @param string|RushFiles\API\User
      */
     private function AuthHeaders($token)
     {
