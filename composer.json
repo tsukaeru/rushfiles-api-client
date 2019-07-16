@@ -1,6 +1,7 @@
 {
     "name": "rushfiles/api-client",
     "type": "library",
+    "description": "PHP Client for RushFiles API.",
     "autoload": {
         "psr-4": {
             "RushFiles\\": "src"
