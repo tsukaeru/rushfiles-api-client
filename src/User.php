@@ -99,6 +99,6 @@ class User
      */
     public function getShare($id)
     {
-        return $this->getShares()->get($id);
+        return Collection::make($this->getShares())->get($id);
     }
 }
