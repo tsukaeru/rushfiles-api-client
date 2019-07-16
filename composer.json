@@ -1,20 +1,9 @@
 {
-    "name": "tsukaeru.net/rf-client",
+    "name": "rushfiles/api-client",
     "type": "library",
-    "authors": [
-        {
-            "name": "Wiktor Klonowski",
-            "email": "wklonowski@tsukaeru.net"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "RushFiles\\": "src"
-        }
-    },
-    "config":{
-        "platform": {
-            "php": "5.6.40"
         }
     },
     "require": {
