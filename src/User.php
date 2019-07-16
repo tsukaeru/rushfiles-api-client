@@ -76,7 +76,7 @@ class User
     }
 
     /**
-     * @return array
+     * @return VirtualFile\Share[]
      */
     public function getShares()
     {
@@ -91,7 +91,7 @@ class User
             });
         }
 
-        return $this->shares;
+        return $this->shares->all();
     }
 
     /**

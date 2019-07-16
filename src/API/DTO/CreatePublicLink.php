@@ -30,9 +30,7 @@ class CreatePublicLink extends BaseDTO
     {
         $this->properties->put('Password', $password);
 
-        if (empty($password)) {
-            $this->properties->put('EnablePassword', false);
-        }
+        $this->properties->put('EnablePassword', !empty($password));
 
         return $this;
     }

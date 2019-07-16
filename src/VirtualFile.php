@@ -180,15 +180,16 @@ abstract class VirtualFile
 
     /**
      * @param bool $refresh
-     * @return array
+     * @return PublicLink[]
      */
     public function getPublicLinks($refresh = false)
     {
-        if ($this->links !== null || $refresh)
+        if ($this->links === null || $refresh)
         {
             $linksRaw = $this->client->GetPublicLinks($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
-            $this->links = Collection::make($linksRaw)->map(function ($data) {
-                return new PublicLink($data);
+            $self = $this;
+            $this->links = Collection::make($linksRaw)->map(function ($data) use ($self) {
+                return new PublicLink($data, $self->domain);
             });
         }
 

@@ -22,7 +22,7 @@ class Directory extends VirtualFile
             $self = $this;
             $this->children = Collection::make($rawData)->mapWithKeys(function ($data) use ($self) {
                 $file = VirtualFile::create($data, $self->domain, $self->token, $self->client, $self);
-                return [$file->getName() => $file];
+                return [$file->getInternalName() => $file];
             });
         }
 
