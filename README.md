@@ -14,7 +14,7 @@ Add the following repository details to `composer.json` file:
 "repositories": [
     {
         "type": "vcs",
-        "url": "https://github.com/RushfilesDevelopment/RushFiles.Client.Php"
+        "url": "https://github.com/tsukaeru/rushfiles-api-client"
     }
 ]
 ```
@@ -132,7 +132,7 @@ Array
 )
 ...
 ```
-* For all available methods, please see the `Tsukaeru\RushFiles\API\Client` class' [source file](https://github.com/RushfilesDevelopment/RushFiles.Client.Php/blob/master/src/API/Client.php)
+* For all available methods, please see the `Tsukaeru\RushFiles\API\Client` class' [source file](src/API/Client.php)
 
 * For data structures returned and pass to the client, please see the [RushFiles API swagger documentation](https://clientgateway.rushfiles.com/swagger/ui/index#/)
 
@@ -166,4 +166,4 @@ Name:          jsmith - Home folder
 Internal Name: 02a8d989567e4c4c8085637c7aa24569
 ```
 
-* For more examples of using the abstraction layer, please refer to the [samples](https://github.com/RushfilesDevelopment/RushFiles.Client.Php/tree/master/samples).
+* For more examples of using the abstraction layer, please refer to the [samples](samples).
