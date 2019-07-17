@@ -1,14 +1,14 @@
 <?php
 
-namespace RushFiles;
+namespace Tsukaeru\RushFiles;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Arr;
-use RushFiles\VirtualFile\File;
-use RushFiles\VirtualFile\Directory;
-use RushFiles\VirtualFile\Share;
-use RushFiles\API\DTO\CreatePublicLink;
-use RushFiles\API\Client;
+use Tsukaeru\RushFiles\VirtualFile\File;
+use Tsukaeru\RushFiles\VirtualFile\Directory;
+use Tsukaeru\RushFiles\VirtualFile\Share;
+use Tsukaeru\RushFiles\API\DTO\CreatePublicLink;
+use Tsukaeru\RushFiles\API\Client;
 
 abstract class VirtualFile
 {
@@ -61,7 +61,7 @@ abstract class VirtualFile
      * @param array $rawData properties returned by RushFiles API
      * @param string $domain domain from where the virtual file was taken
      * @param string $token  domain token
-     * @param Client $client RushFiles API Client object
+     * @param Client $client RushFiles' API Client object
      * @param VirtualFile|null $parent parent of the file
      */
     public function __construct($rawData, $domain, $token, Client $client, VirtualFile $parent = null)

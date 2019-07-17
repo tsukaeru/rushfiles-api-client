@@ -1,4 +1,4 @@
-# RushFiles PHP API Client Library #
+# RushFiles' API PHP Client Library #
 
 ## Requirements
 
@@ -6,33 +6,33 @@
 
 ## Installation
 
-The RushFiles PHP API Client can be installed using composer.
+The RushFiles' API PHP Client can be installed using composer.
 
 Add the following repository details to `composer.json` file:
 
 ```json
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/RushfilesDevelopment/RushFiles.Client.Php"
-        }
-    ]
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/RushfilesDevelopment/RushFiles.Client.Php"
+    }
+]
 ```
 
 and then require the package:
 
 ```
-    composer require rushfiles/api-client ^0.1.0
+composer require tsukaeru/rushfiles-api-client ^0.1.0
 ```
 
 ## Configuration
 
-API calls are done through the instance of `RushFiles\API\Client` which instead uses a Guzzle library for HTTP client. Default Guzzle client object is created automatically, but you can also pass your own instance for further customization.
+API calls are done through the instance of `Tsukaeru\RushFiles\API\Client` which instead uses a Guzzle library for HTTP client. Default Guzzle client object is created automatically, but you can also pass your own instance for further customization.
 
 ```php
 require_once "vendor/autoload.php";
 
-use RushFiles\API\Client;
+use Tsukaeru\RushFiles\API\Client;
 
 $client = new Client();
 
@@ -46,7 +46,7 @@ $httpClient = new GuzzleHttp\Client([
 $client->setHttpClient($httpClient);
 ```
 
-By default, `"rushfiles/api-client@v0.1.0"` is used as a device name when connecting to RushFiles API. You can set your own name using `setDeviceName` method:
+By default, `"tsukaeru/rushfiles-api-client@v0.1.0"` is used as a device name when connecting to Tsukaeru\RushFiles API. You can set your own name using `setDeviceName` method:
 
 ```php
 $client->setDeviceName("MyLibrary");
@@ -54,9 +54,9 @@ $client->setDeviceName("MyLibrary");
 
 ## Usage
 
-Library can be used to interact with RushFiles API either through `RushFiles\API\Client` object itself or provided object-oriented abstraction.
+Library can be used to interact with RushFiles API either through `Tsukaeru\RushFiles\API\Client` object itself or provided object-oriented abstraction.
 
-### Using `RushFiles\API\Client` directly
+### Using `Tsukaeru\RushFiles\API\Client` directly
 
 For example, the following code gets information on all shares that user has access to using client's methods directly.
 
@@ -132,9 +132,9 @@ Array
 )
 ...
 ```
-\* For all available methods, please see the `RushFiles\API\Client` class' [source file](https://github.com/RushfilesDevelopment/RushFiles.Client.Php/blob/master/src/API/Client.php)
+* For all available methods, please see the `Tsukaeru\RushFiles\API\Client` class' [source file](https://github.com/RushfilesDevelopment/RushFiles.Client.Php/blob/master/src/API/Client.php)
 
-\*\* For data structures returned and pass to the client, please see the [RushFiles API swagger documentation](https://clientgateway.rushfiles.com/swagger/ui/index#/)
+* For data structures returned and pass to the client, please see the [RushFiles API swagger documentation](https://clientgateway.rushfiles.com/swagger/ui/index#/)
 
 ### Using provided abstraction
 
@@ -143,12 +143,12 @@ The following code gets information on all shares that user has access to using 
 ```php
 /**
  * Login method detects user's domain, registers the device and returns
- * an initialized RushFiles\User instance.
+ * an initialized Tsukaeru\RushFiles\User instance.
  */
 $user = $client->Login($username, $password);
 
 /**
- * Retrieve data on all shares as a array of RushFiles\VirtualFile\Share
+ * Retrieve data on all shares as a array of Tsukaeru\RushFiles\VirtualFile\Share
  * objects.
  */
 $shares = $user->getShares();
@@ -166,4 +166,4 @@ Name:          jsmith - Home folder
 Internal Name: 02a8d989567e4c4c8085637c7aa24569
 ```
 
-For more examples of using the abstraction layer, please refer to the [samples](https://github.com/RushfilesDevelopment/RushFiles.Client.Php/tree/master/samples).
+* For more examples of using the abstraction layer, please refer to the [samples](https://github.com/RushfilesDevelopment/RushFiles.Client.Php/tree/master/samples).

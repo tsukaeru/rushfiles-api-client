@@ -2,8 +2,8 @@
 
 require_once "__DIR__/../vendor/autoload.php";
 
-use RushFiles\API\Client;
-use RushFiles\PublicLink;
+use Tsukaeru\RushFiles\API\Client;
+use Tsukaeru\RushFiles\PublicLink;
 
 // change to your own credentials
 $username = "admin@example.com";
@@ -36,7 +36,7 @@ function public_link_properties(PublicLink $link)
     echo "\nIs File:             " . var_export($link->isFile(), true);
     echo "\nVirtual File Id:     " . $link->getVirtualFileId();
     echo "\nIs Password Enabled: " . var_export($link->isPasswordEnabled(), true);
-    echo "\nMessage            : " . $link->getMessage();
+    echo "\nMessage:             " . $link->getMessage();
     echo "\n";
 }
 
@@ -68,7 +68,7 @@ Share Id:            02a8d989567e4c4c8085637c7aa24569
 Is File:             true
 Virtual File Id:     5b44423401a1442ab5ca0ba447163026
 Is Password Enabled: true
-Message            : test public link
+Message:             test public link
 
 -----------------------------------------------
 
@@ -80,7 +80,7 @@ Share Id:            02a8d989567e4c4c8085637c7aa24569
 Is File:             true
 Virtual File Id:     5b44423401a1442ab5ca0ba447163026
 Is Password Enabled: false
-Message            : 
+Message:             
 
 Id:                  xKUCLhdBUP
 URL:                 https://cloudfile.jp/client/publiclink.aspx?id=xKUCLhdBUP
@@ -88,6 +88,6 @@ Share Id:            02a8d989567e4c4c8085637c7aa24569
 Is File:             true
 Virtual File Id:     5b44423401a1442ab5ca0ba447163026
 Is Password Enabled: true
-Message            : test public link
+Message:             test public link
 
 */

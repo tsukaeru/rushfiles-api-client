@@ -2,9 +2,9 @@
 
 require_once "__DIR__/../vendor/autoload.php";
 
-use RushFiles\API\Client;
-use RushFiles\VirtualFile;
-use RushFiles\VirtualFile\File;
+use Tsukaeru\RushFiles\API\Client;
+use Tsukaeru\RushFiles\VirtualFile;
+use Tsukaeru\RushFiles\VirtualFile\File;
 
 // change to your own credentials
 $username = "admin@example.com";
@@ -42,7 +42,7 @@ show_properties($file);
 
 Exemplary output:
 
-Object:        RushFiles\VirtualFile\Share
+Object:        Tsukaeru\RushFiles\VirtualFile\Share
 Name:          jsmith - Home folder
 Internal Name: 02a8d989567e4c4c8085637c7aa24569
 Share Id:      02a8d989567e4c4c8085637c7aa24569
@@ -51,7 +51,7 @@ Is File:       false
 Size:          3
 Tick:          46
 
-Object:        RushFiles\VirtualFile\Directory
+Object:        Tsukaeru\RushFiles\VirtualFile\Directory
 Name:          screenshots
 Internal Name: 12793f8cc7474c168c4f98c8b1bfd725
 Share Id:      02a8d989567e4c4c8085637c7aa24569
@@ -60,7 +60,7 @@ Is File:       false
 Size:          6
 Tick:          1
 
-Object:        RushFiles\VirtualFile\File
+Object:        Tsukaeru\RushFiles\VirtualFile\File
 Name:          details.PNG
 Internal Name: 5fcabe41261d4d29aa494647f04d22d5
 Share Id:      02a8d989567e4c4c8085637c7aa24569

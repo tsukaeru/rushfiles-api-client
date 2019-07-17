@@ -1,8 +1,8 @@
 <?php
 
-namespace RushFiles\VirtualFile;
+namespace Tsukaeru\RushFiles\VirtualFile;
 
-use RushFiles\VirtualFile;
+use Tsukaeru\RushFiles\VirtualFile;
 
 class File extends VirtualFile
 {

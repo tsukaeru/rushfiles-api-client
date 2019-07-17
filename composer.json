@@ -1,10 +1,10 @@
 {
-    "name": "rushfiles/api-client",
+    "name": "tsukaeru/rushfiles-api-client",
     "type": "library",
     "description": "PHP Client for RushFiles API.",
     "autoload": {
         "psr-4": {
-            "RushFiles\\": "src"
+            "Tsukaeru\\RushFiles\\": "src"
         }
     },
     "require": {

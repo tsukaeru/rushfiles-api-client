@@ -1,6 +1,6 @@
 <?php
 
-namespace RushFiles\API\DTO;
+namespace Tsukaeru\RushFiles\API\DTO;
 
 use Ramsey\Uuid\Uuid;
 use Illuminate\Support\Collection;

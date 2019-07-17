@@ -1,6 +1,6 @@
 <?php
 
-namespace RushFiles;
+namespace Tsukaeru\RushFiles;
 
 use Illuminate\Support\Collection;
 

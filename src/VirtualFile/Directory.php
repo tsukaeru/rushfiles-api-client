@@ -1,10 +1,10 @@
 <?php
 
-namespace RushFiles\VirtualFile;
+namespace Tsukaeru\RushFiles\VirtualFile;
 
-use RushFiles\VirtualFile;
+use Tsukaeru\RushFiles\VirtualFile;
 use Illuminate\Support\Collection;
-use RushFiles\API\DTO\RfVirtualFile;
+use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 
 class Directory extends VirtualFile
 {

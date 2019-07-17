@@ -2,8 +2,8 @@
 
 require_once "__DIR__/../vendor/autoload.php";
 
-use RushFiles\API\Client;
-use RushFiles\VirtualFile\Directory;
+use Tsukaeru\RushFiles\API\Client;
+use Tsukaeru\RushFiles\VirtualFile\Directory;
 
 // change to your own credentials
 $username = "admin@example.com";

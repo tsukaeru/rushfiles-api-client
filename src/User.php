@@ -1,10 +1,10 @@
 <?php
 
-namespace RushFiles;
+namespace Tsukaeru\RushFiles;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use RushFiles\API\Client;
+use Tsukaeru\RushFiles\API\Client;
 
 class User
 {
@@ -19,7 +19,7 @@ class User
     protected $domainTokens = [];
 
     /**
-     * @var Collection|null of RushFiles\API\VirtualFile
+     * @var Collection|null of Tsukaeru\RushFiles\API\VirtualFile
      */
     protected $shares = null;
 
