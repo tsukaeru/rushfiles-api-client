@@ -22,7 +22,7 @@ Add the following repository details to `composer.json` file:
 and then require the package:
 
 ```
-composer require tsukaeru/rushfiles-api-client ^0.1.0
+composer require tsukaeru/rushfiles-api-client
 ```
 
 ## Configuration
