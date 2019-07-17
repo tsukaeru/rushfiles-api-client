@@ -131,6 +131,8 @@ class Client
      */
     public function Login($username, $password, $domain = null)
     {
+        $username = strtolower($username);
+
         if (!is_string($domain)) {
             $domain = $this->GetUserDomain($username);
         }
@@ -149,9 +151,18 @@ class Client
      */
     public function GetUserDomain($username)
     {
-        $request = new Request('GET', $this->UserDomainURL($username));
-        $response = $this->client->send($request);
-        list(,$domain) = explode(',', $response->getBody());
+        try {
+            $request = new Request('GET', $this->UserDomainURL($username));
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not retrieve user's domain.");
+        }
+
+        list($retUsername,$domain) = explode(',', $response->getBody());
+
+        if ($retUsername !== strtolower($username) || empty($domain)) {
+            throw new \Exception("Could not retrieve user's domain.");
+        }
 
         return $domain;
     }
