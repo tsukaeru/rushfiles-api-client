@@ -3,6 +3,7 @@
 namespace Tsukaeru\RushFiles\VirtualFile;
 
 use Tsukaeru\RushFiles\VirtualFile;
+use Illuminate\Support\Collection;
 
 class File extends VirtualFile
 {
@@ -69,7 +70,7 @@ class File extends VirtualFile
     public function upload($path)
     {
         $newFile = $this->client->UpdateVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $this->getInternalName(), $path, $this->domain, $this->token);
-        $this->properties = $newFile->properties;
+        $this->properties = Collection::make($newFile->properties);
     }
 
     /**

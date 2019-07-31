@@ -239,7 +239,7 @@ abstract class VirtualFile
     {
         $this->path = trim($path);
 
-        if ($this->path[-1] === DIRECTORY_SEPARATOR) $this->path .= $this->getName();
+        if (substr($this->path, -1) === DIRECTORY_SEPARATOR) $this->path .= $this->getName();
 
         return $this;
     }
