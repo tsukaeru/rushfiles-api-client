@@ -6,8 +6,8 @@ use Illuminate\Support\Collection;
 
 class PublicLink
 {
-    public const STRING = 'string';
-    public const OBJECT = 'object';
+    const STRING = 'string';
+    const OBJECT = 'object';
 
     /**
      * @var array
