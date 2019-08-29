@@ -12,6 +12,8 @@ use Tsukaeru\RushFiles\API\DTO\ClientJournal;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
+use Psr\SimpleCache\CacheInterface;
+use Tightenco\Collect\Support\Arr;
 use Tsukaeru\RushFiles\User;
 use Tsukaeru\RushFiles\VirtualFile;
 
@@ -72,12 +74,19 @@ class Client
         'Content-Type' => 'application/json',
     ];
 
-    public function __construct()
+    /**
+     * @var Psr\SimpleCache\CacheInterface
+     */
+    private $cache;
+
+    public function __construct(CacheInterface $cache)
     {
         $this->deviceOS = php_uname('s') . ' ' . php_uname('');
         $this->deviceId = Uuid::uuid5(self::CLIENT_NAMESPACE_UUID, $this->deviceName);
 
         $this->client = new HttpClient();
+
+        $this->cache = $cache;
     }
 
     /**
@@ -187,9 +196,17 @@ class Client
             'DeviceType' => 8, // unknown
         ];
 
+        $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".deviceId";
+
+        if ($this->cache->get($cacheKey) == $this->getDeviceId()) {
+            return;
+        }
+
         try {
             $request = new Request('PUT', $this->RegisterDeviceURL($domain, $this->getDeviceId()), $this->defaultHeaders, json_encode($deviceAssociation));
-            $response = $this->client->send($request);
+            $this->client->send($request);
+
+            $this->cache->set($cacheKey, $this->getDeviceId());
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not register device.");
         }
