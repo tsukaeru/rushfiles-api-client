@@ -107,12 +107,12 @@ class VirtualFileTest extends TestCase
 
         $file_system = vfsStream::setup();
 
-        $file->setPath($file_system->url().'/')->download('');
+        $file->setPath($file_system->url().'/')->download();
         $this->assertFileExists($file_system->url() . '/test.txt');
         $this->assertEquals('content', file_get_contents($file_system->url().'/test.txt'));
 
         $path = $file_system->url() .'/directory/test.txt';
-        $file->setPath($path)->download('');
+        $file->setPath($path)->download();
         $this->assertFileExists($path);
         $this->assertEquals('content', file_get_contents($path));
     }
@@ -127,12 +127,12 @@ class VirtualFileTest extends TestCase
         $file_system = vfsStream::setup();
 
         $path = $file_system->url() .'/test.txt';
-        $file->setPath($path)->download('');
+        $file->setPath($path)->download();
         $this->assertFileExists($path);
         $this->assertEquals(0, filesize($path));
     }
 
-    public function testFileSaveDirectory()
+    public function testFileSavDirectory()
     {
         $file1 = $this->createPartialMock(File::class, ['getContent', 'getName', 'isFile']);
         $file1->method('getContent')->willReturn('content');

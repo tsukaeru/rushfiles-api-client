@@ -61,7 +61,7 @@ class File extends VirtualFile
 
         if ($bytes === false)
         {
-            throw new \Exception("Error saving file {$this->properties->get('PublicName')} to $path"); // @codeCoverageIgnore
+            throw new \Exception("Error saving file {$this->getName()} to {$this->path}"); // @codeCoverageIgnore
         }
 
         return $bytes;
