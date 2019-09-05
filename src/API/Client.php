@@ -61,12 +61,6 @@ class Client
     private $deviceOS;
 
     /**
-     * Generated from CLIENT_NAMESPACE_UUID and default device name
-     * @var string
-     */
-    private $deviceId = 'dae9022f-96c2-52fa-8aa1-d758a22759cc';
-
-    /**
      * @var array
      */
     private $defaultHeaders = [
@@ -74,19 +68,11 @@ class Client
         'Content-Type' => 'application/json',
     ];
 
-    /**
-     * @var Psr\SimpleCache\CacheInterface
-     */
-    private $cache;
-
-    public function __construct(CacheInterface $cache)
+    public function __construct()
     {
         $this->deviceOS = php_uname('s') . ' ' . php_uname('');
-        $this->deviceId = Uuid::uuid5(self::CLIENT_NAMESPACE_UUID, $this->deviceName);
 
         $this->client = new HttpClient();
-
-        $this->cache = $cache;
     }
 
     /**
@@ -97,7 +83,6 @@ class Client
     public function setDeviceName($deviceName)
     {
         $this->deviceName = $deviceName;
-        $this->deviceId = Uuid::uuid5(self::CLIENT_NAMESPACE_UUID, $this->deviceName);
 
         return $this;
     }
@@ -115,7 +100,7 @@ class Client
      */
     public function getDeviceId()
     {
-        return $this->deviceId;
+        return Uuid::uuid5(self::CLIENT_NAMESPACE_UUID, $this->deviceName);
     }
 
     /**
@@ -138,15 +123,26 @@ class Client
      *
      * @return User
      */
-    public function Login($username, $password, $domain = null)
+    public function Login($username, $password, $domain = null, CacheInterface $cache = null)
     {
         $username = strtolower($username);
-
+        
         if (!is_string($domain)) {
             $domain = $this->GetUserDomain($username);
         }
+        
+        /**
+         * Device registration
+         */
+        $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".deviceId";
+        
+        if ($cache === null || $cache->get($cacheKey) != $this->getDeviceId()) {
+            $this->RegisterDevice($username, $password, $domain);
 
-        $this->RegisterDevice($username, $password, $domain);
+            if ($cache) {
+                $cache->set($cacheKey, $this->getDeviceId());
+            }
+        }
 
         $tokens = $this->GetDomainTokens($username, $password, $domain);
 
@@ -196,17 +192,9 @@ class Client
             'DeviceType' => 8, // unknown
         ];
 
-        $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".deviceId";
-
-        if ($this->cache->get($cacheKey) == $this->getDeviceId()) {
-            return;
-        }
-
         try {
             $request = new Request('PUT', $this->RegisterDeviceURL($domain, $this->getDeviceId()), $this->defaultHeaders, json_encode($deviceAssociation));
             $this->client->send($request);
-
-            $this->cache->set($cacheKey, $this->getDeviceId());
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not register device.");
         }
