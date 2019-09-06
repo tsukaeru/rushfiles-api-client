@@ -127,8 +127,23 @@ class Client
     {
         $username = strtolower($username);
         
+        /**
+         * User domain
+         */
         if (!is_string($domain)) {
-            $domain = $this->GetUserDomain($username);
+            $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".domain";
+            
+            if ($cache) {
+                $domain = $cache->get($cacheKey);
+            }
+
+            if ($domain === null) {
+                $domain = $this->GetUserDomain($username);
+
+                if ($cache) {
+                    $cache->set($cacheKey, $domain);
+                }
+            }
         }
         
         /**

@@ -10,7 +10,7 @@ $pool = new ArrayCachePool();
 $client = new Client();
 
 // change to your own credentials
-$username = "admin@example.com";
+$username = "admin@tsukaeru.net";
 $password = "qwerty";
 
 for ($i = 0; $i < 2; ++$i)

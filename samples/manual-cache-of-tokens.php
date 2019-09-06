@@ -11,11 +11,12 @@ require_once "__DIR__/../vendor/autoload.php";
 // change to your own credentials
 $username = "admin@example.com";
 $password = "qwerty";
+$domain = "rushfiles.com";
 
 $pool = new ArrayCachePool();
 
 // set old, incorrect cache
-$pool->set('rf_api_client.admin_example.com.tokens', [
+$pool->set("rf_api_client." . str_replace('@', '_', $username) . ".tokens", [
     [
         "DomainUrl" => "rushfiles.com",
         "DomainToken" => "token"
@@ -46,9 +47,9 @@ function MyLogin($username, $password, $domain, CacheInterface $cache)
 }
 
 $start = microtime(true);
-$user = MyLogin($username, $password, 'rushfile.com', $pool);
+$user = MyLogin($username, $password, $domain, $pool);
 echo "Cache miss login time: " . (microtime(true) - $start) . "ms.\n";
 
 $start = microtime(true);
-$user = MyLogin($username, $password, 'rushfiles.com', $pool);
+$user = MyLogin($username, $password, $domain, $pool);
 echo "Cache hit login time: " . (microtime(true) - $start) . "ms.\n";
