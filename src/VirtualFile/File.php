@@ -53,11 +53,11 @@ class File extends VirtualFile
      *
      * @inheritDoc
      */
-    public function download()
+    public function download($path)
     {
-        $this->createDirectory();
+        $path = $this->preparePath($path);
 
-        $bytes = file_put_contents($this->path, $this->getContent());
+        $bytes = file_put_contents($path, $this->getContent());
 
         if ($bytes === false)
         {
@@ -74,13 +74,19 @@ class File extends VirtualFile
     }
 
     /**
-     * Create directory for a file.
+     * Process path for download
      */
-    protected function createDirectory()
+    protected function preparePath($path)
     {
-        if (!is_dir(dirname($this->path)))
+        $path = trim($path);
+
+        if (substr($path, -1) === DIRECTORY_SEPARATOR) $path .= $this->getName();
+
+        if (!is_dir(dirname($path)))
         {
-            mkdir(dirname($this->path), 0777, true);
+            mkdir(dirname($path), 0777, true);
         }
+
+        return $path;
     }
 }

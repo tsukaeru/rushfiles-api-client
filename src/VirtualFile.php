@@ -35,11 +35,6 @@ abstract class VirtualFile
     /**
      * @var string
      */
-    protected $path = './';
-
-    /**
-     * @var string
-     */
     protected $content;
 
     /**
@@ -154,7 +149,7 @@ abstract class VirtualFile
      *
      * @throws \Exception
      */
-    abstract public function download();
+    abstract public function download($path);
 
     /**
      * @return Directory|null
@@ -229,26 +224,5 @@ abstract class VirtualFile
             throw new \Exception("New public link could not be found.");
 
         return $link;
-    }
-
-    /**
-     * @param string
-     * @return VirtualFile
-     */
-    public function setPath($path)
-    {
-        $this->path = trim($path);
-
-        if (substr($this->path, -1) === DIRECTORY_SEPARATOR) $this->path .= $this->getName();
-
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPath()
-    {
-        return $this->path;
     }
 }

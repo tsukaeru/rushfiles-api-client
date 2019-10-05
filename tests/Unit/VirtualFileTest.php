@@ -100,19 +100,21 @@ class VirtualFileTest extends TestCase
 
     public function testFileSave()
     {
+        $filename = 'test.txt';
         $file = $this->createPartialMock(File::class, ['getContent', 'getName', 'isFile']);
         $file->method('getContent')->willReturn('content');
-        $file->method('getName')->willReturn('test.txt');
+        $file->method('getName')->willReturn($filename);
         $file->method('isFile')->willReturn(true);
 
         $file_system = vfsStream::setup();
 
-        $file->setPath($file_system->url(). DIRECTORY_SEPARATOR)->download();
-        $this->assertFileExists($file_system->url() . '/test.txt');
-        $this->assertEquals('content', file_get_contents($file_system->url().'/test.txt'));
+        $path = $file_system->url(). DIRECTORY_SEPARATOR;
+        $file->download($path);
+        $this->assertFileExists($path . $filename);
+        $this->assertEquals('content', file_get_contents($path . $filename));
 
         $path = $file_system->url() .'/directory/test.txt';
-        $file->setPath($path)->download();
+        $file->download($path);
         $this->assertFileExists($path);
         $this->assertEquals('content', file_get_contents($path));
     }
@@ -127,12 +129,12 @@ class VirtualFileTest extends TestCase
         $file_system = vfsStream::setup();
 
         $path = $file_system->url() .'/test.txt';
-        $file->setPath($path)->download();
+        $file->download($path);
         $this->assertFileExists($path);
         $this->assertEquals(0, filesize($path));
     }
 
-    public function testFileSavDirectory()
+    public function testFileSaveDirectory()
     {
         $file1 = $this->createPartialMock(File::class, ['getContent', 'getName', 'isFile']);
         $file1->method('getContent')->willReturn('content');
@@ -151,7 +153,7 @@ class VirtualFileTest extends TestCase
 
         $file_system = vfsStream::setup();
         $path = $file_system->url() . DIRECTORY_SEPARATOR;
-        $dir->setPath($path)->download();
+        $dir->download($path);
 
         $this->assertFileExists($path . 'dir/test1.txt');
         $this->assertFileExists($path . 'dir/test2.txt');

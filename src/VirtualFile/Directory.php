@@ -80,15 +80,15 @@ class Directory extends VirtualFile
      *
      * @inheritDoc
      */
-    public function download()
+    public function download($path)
     {
-        $this->createDirectory();
+        $path = $this->preparePath($path);
 
-        $dir = $this->path . DIRECTORY_SEPARATOR;
+        $dir = $path . DIRECTORY_SEPARATOR;
         $bytes = 0;
 
         foreach ($this->getChildren() as $file) {
-            $bytes += $file->setPath($dir)->download();
+            $bytes += $file->download($dir);
         }
 
         return $bytes;
@@ -111,11 +111,20 @@ class Directory extends VirtualFile
         return $newFile;
     }
 
-    protected function createDirectory()
+    /**
+     * Process path for download
+     */
+    protected function preparePath($path)
     {
-        if (!is_dir($this->path))
+        $path = trim($path);
+
+        if (substr($path, -1) === DIRECTORY_SEPARATOR) $path .= $this->getName();
+
+        if (!is_dir($path))
         {
-            mkdir($this->path, 0777, true);
+            mkdir($path, 0777, true);
         }
+
+        return $path;
     }
 }
