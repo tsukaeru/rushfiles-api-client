@@ -10,6 +10,9 @@ use function GuzzleHttp\json_encode;
 use function GuzzleHttp\json_decode;
 use Tsukaeru\RushFiles\User;
 use GuzzleHttp\Client as GuzzleClient;
+use org\bovigo\vfs\vfsStream;
+use Tsukaeru\RushFiles\API\DTO\ClientJournal;
+use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\VirtualFile;
 
 class ClientTest extends TestCase
@@ -294,6 +297,58 @@ class ClientTest extends TestCase
 
         $this->assertEquals('TestName', $client->getDeviceName());
         $this->assertEquals('4b101b46-823d-5e39-a00a-1fc81c2ab356', $client->getDeviceId());
+    }
+
+    public function testCreateVirtualFile()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $mock->append(new Response(200, [], json_encode([
+            'Data' => [
+                'Url' => 'https://filecache01.rushfiles.com/upload_url',
+            ],
+        ])));
+        $mock->append(new Response());
+        $mock->append(new Response(200, [], json_encode([
+            'Data' => [
+                'IsFile' => true,
+            ],
+        ])));
+
+        $file_system = vfsStream::setup();
+        $path = $file_system->url() . DIRECTORY_SEPARATOR . 'test.txt';
+        file_put_contents($path, 'contents');
+
+        $rfFile = new RfVirtualFile('share-id', 'parent-id', $path);
+        $file = $client->CreateVirtualFile($rfFile, $path, 'rushfiles.com', 'token');
+
+        $request = $history[0]['request'];
+        $request->getBody()->rewind();
+        $this->assertEquals('POST', $request->getMethod());
+        $this->assertEquals('https://filecache01.rushfiles.com/api/shares/share-id/files', (string)$request->getUri());
+        $this->assertArraySubset([
+            'RfVirtualFile' => [
+                'EndOfFile' => 8,
+                'PublicName' => 'test.txt',
+                'Attributes' => RfVirtualFile::NORMAL,
+                'CreationTime' => date('c', filectime($path)),
+                'LastAccessTime' => date('c', fileatime($path)),
+                'LastWriteTime' => date('c', filemtime($path)),
+                'ShareId' => 'share-id',
+                'ParrentId' => 'parent-id',
+            ],
+            'ClientJournalEventType' => ClientJournal::CREATE,
+            'DeviceId' => 'd51b8f6c-3f0e-5f6e-9c93-58763a47185d',
+        ], json_decode($request->getBody()->getContents(), true));
+
+        $request = $history[1]['request'];
+        $this->assertEquals('PUT', $request->getMethod());
+        $this->assertEquals('https://filecache01.rushfiles.com/upload_url', (string)$request->getUri());
+        $this->assertArraySubset([
+            'Content-Range' => ['bytes 0-7/8'],
+        ], $request->getHeaders());
+        $this->assertEquals($request->getBody(), 'contents');
     }
 
     private function prepareClient(array &$history = [])

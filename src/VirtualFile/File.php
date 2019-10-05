@@ -67,6 +67,7 @@ class File extends VirtualFile
         return $bytes;
     }
 
+    // untested
     public function upload($path)
     {
         $newFile = $this->client->UpdateVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $this->getInternalName(), $path, $this->domain, $this->token);

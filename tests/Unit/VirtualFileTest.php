@@ -3,6 +3,7 @@ use PHPUnit\Framework\TestCase;
 use Tsukaeru\RushFiles\VirtualFile;
 use Tsukaeru\RushFiles\API\Client;
 use org\bovigo\vfs\vfsStream;
+use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\VirtualFile\File;
 use Tsukaeru\RushFiles\VirtualFile\Directory;
 use Tsukaeru\RushFiles\VirtualFile\Share;
@@ -157,6 +158,36 @@ class VirtualFileTest extends TestCase
 
         $this->assertFileExists($path . 'dir/test1.txt');
         $this->assertFileExists($path . 'dir/test2.txt');
+    }
+
+    public function testFileUpload()
+    {        
+        $file_system = vfsStream::setup();
+        file_put_contents($file_system->url() . '/new', 'contents');
+
+        $client = $this->createMock(Client::class);
+        $client->expects($this->once())->method('CreateVirtualFile')
+            ->with($this->isInstanceOf(RfVirtualFile::class), $this->equalTo($file_system->url() . '/new'), $this->equalTo('cloudfile.jp'), $this->equalTo('token'))
+            ->willReturn(new File(['PublicName' => 'new', 'InternalName' => 'new'], 'cloudfile.jp', 'token', $client));
+        $client->expects($this->once())->method('GetDirectoryChildren')
+            ->willReturn([
+                ['IsFile' => true, 'InternalName' => 'old'],
+            ]);
+        $parent = new Directory([
+            'InternalName' => 'internal',
+        ], 'cloudfile.jp', 'token', $client);
+        $dir = new Directory([
+            'IsFile' => false,
+            'InternalName' => 'dir',
+            'ShareId' => 'share-id',
+            ''
+        ], 'cloudfile.jp', 'token', $client, $parent);
+        $dir->getChildren();
+
+        $file = $dir->uploadFile($file_system->url() . '/new');
+        
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertEquals(2, count($dir->getChildren()));
     }
 
     /**
