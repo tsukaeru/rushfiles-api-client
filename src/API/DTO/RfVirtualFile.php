@@ -35,7 +35,7 @@ class RfVirtualFile extends BaseDTO
             $file = [
                 'EndOfFile' => is_file($file) ? filesize($file) : 0,
                 'PublicName' => basename($file),
-                'Attributes' => is_dir($file) ? self::FILE_ATTRIBUTES['DIRECTORY'] : self::FILE_ATTRIBUTES['NORMAL'],
+                'Attributes' => is_dir($file) ? self::DIRECTORY : self::NORMAL,
                 'CreationTime' => date('c', filectime($file)),
                 'LastAccessTime' => date('c', fileatime($file)),
                 'LastWriteTime' => date('c', filemtime($file)),
@@ -48,7 +48,7 @@ class RfVirtualFile extends BaseDTO
 
         $this->properties = Collection::make([
             'ShareId' => $shareId,
-            'ParentId' => $parentId,
+            'ParrentId' => $parentId,
             'InternalName' => Uuid::uuid1(),
         ])->merge($file);
     }

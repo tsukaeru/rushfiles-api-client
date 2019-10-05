@@ -17,6 +17,13 @@ class BaseDTO
      */
     public function getData()
     {
+        return $this->properties->map(function ($item, $key) {
+            if ($item instanceof BaseDTO) {
+                return $item->getData();
+            } else {
+                return $item;
+            }
+        });
         return $this->properties->all();
     }
 

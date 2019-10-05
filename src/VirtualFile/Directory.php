@@ -104,9 +104,10 @@ class Directory extends VirtualFile
     public function uploadFile($path)
     {
         $rfFile = new RfVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $path);
-        $properties = $this->client->CreateVirtualFile($rfFile, $path, $this->domain, $this->token);
-        $newFile = VirtualFile::create($properties, $this->domain, $this->token, $this->client, $this);
-        $this->children->put(basename($path), $newFile);
+        $newFile = $this->client->CreateVirtualFile($rfFile, $path, $this->domain, $this->token);
+        if ($this->children !== null)
+            $this->children->put(basename($path), $newFile);
+        
         return $newFile;
     }
 

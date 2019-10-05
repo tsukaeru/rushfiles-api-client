@@ -343,7 +343,7 @@ class Client
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
         try {
-            $request = new Request('POST', $this->FilesURL($domain, $rfFile->getShareId()), $headers, json_encode($journal));
+            $request = new Request('POST', $this->FilesURL($domain, $rfFile->getShareId()), $headers, $journal->getJSON());
             $response = $this->client->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create a new virtual file.");

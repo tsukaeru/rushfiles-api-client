@@ -107,7 +107,7 @@ class VirtualFileTest extends TestCase
 
         $file_system = vfsStream::setup();
 
-        $file->setPath($file_system->url().'/')->download();
+        $file->setPath($file_system->url(). DIRECTORY_SEPARATOR)->download();
         $this->assertFileExists($file_system->url() . '/test.txt');
         $this->assertEquals('content', file_get_contents($file_system->url().'/test.txt'));
 

@@ -41,6 +41,6 @@ class Share extends Directory
      */
     public function getParent()
     {
-        return null;
+        return $this;
     }
 }
