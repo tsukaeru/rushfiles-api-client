@@ -29,7 +29,7 @@ class RfVirtualFile extends BaseDTO
      * @param string $parentId
      * @param string|array $file Either path to a file/directory or array containing properties of Virtual File
      */
-    public function __construct(string $shareId, string $parentId, $file)
+    public function __construct($shareId, $parentId, $file)
     {
         if (is_string($file) && file_exists($file)) {
             $file = [

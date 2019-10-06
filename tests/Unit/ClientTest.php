@@ -309,7 +309,7 @@ class ClientTest extends TestCase
                 'Url' => 'https://filecache01.rushfiles.com/upload_url',
             ],
         ])));
-        $mock->append(new Response());
+        $mock->append(new Response(201));
         $mock->append(new Response(200, [], json_encode([
             'Data' => [
                 'IsFile' => true,
