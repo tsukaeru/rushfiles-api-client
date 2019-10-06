@@ -1,17 +1,14 @@
 <?php
 
+require_once "../vendor/autoload.php";
+
 use Cache\Adapter\PHPArray\ArrayCachePool;
 use Psr\SimpleCache\CacheInterface;
 use Tsukaeru\RushFiles\API\Client;
 use Tsukaeru\RushFiles\User;
 
-require_once "__DIR__/../vendor/autoload.php";
-
-
-// change to your own credentials
-$username = "admin@example.com";
-$password = "qwerty";
-$domain = "rushfiles.com";
+// import $username, $password and $domain
+require_once "_auth_params.php";
 
 $pool = new ArrayCachePool();
 

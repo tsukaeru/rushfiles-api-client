@@ -5,13 +5,12 @@ require_once __DIR__."/../vendor/autoload.php";
 use Cache\Adapter\PHPArray\ArrayCachePool;
 use Tsukaeru\RushFiles\API\Client;
 
+// import $username, $password and $domain
+require_once "_auth_params.php";
+
 $pool = new ArrayCachePool();
 
 $client = new Client();
-
-// change to your own credentials
-$username = "admin@tsukaeru.net";
-$password = "qwerty";
 
 for ($i = 0; $i < 2; ++$i)
 {

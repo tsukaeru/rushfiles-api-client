@@ -3,11 +3,10 @@
 require_once __DIR__ . "/../vendor/autoload.php";
 
 use Tsukaeru\RushFiles\API\Client;
-use Tsukaeru\RushFiles\VirtualFile\Directory;
 
-// change to your own credentials
-$username = "admin@example.com";
-$password = "qwerty";
+// import $username, $password and $domain
+require_once "_auth_params.php";
+
 $path = "test.txt";
 
 // create file to upload
@@ -20,6 +19,7 @@ $user = $client->Login($username, $password);
 $shares = $user->getShares();
 $share = array_pop($shares);
 
+// upload to directory works the same way
 $file = $share->uploadFile($path);
 
 echo "\nObject:        " . get_class($file);

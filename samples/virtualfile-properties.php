@@ -6,9 +6,8 @@ use Tsukaeru\RushFiles\API\Client;
 use Tsukaeru\RushFiles\VirtualFile;
 use Tsukaeru\RushFiles\VirtualFile\File;
 
-// change to your own credentials
-$username = "admin@example.com";
-$password = "qwerty";
+// import $username, $password and $domain
+require_once "_auth_params.php";
 
 $client = new Client();
 

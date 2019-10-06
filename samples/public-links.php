@@ -5,9 +5,8 @@ require_once "__DIR__/../vendor/autoload.php";
 use Tsukaeru\RushFiles\API\Client;
 use Tsukaeru\RushFiles\PublicLink;
 
-// change to your own credentials
-$username = "admin@example.com";
-$password = "qwerty";
+// import $username, $password and $domain
+require_once "_auth_params.php";
 
 $client = new Client();
 
