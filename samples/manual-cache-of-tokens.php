@@ -10,10 +10,11 @@ use Tsukaeru\RushFiles\User;
 // import $username, $password and $domain
 require_once "_auth_params.php";
 
-$pool = new ArrayCachePool();
+// any cache instance implementing PSR-16 (Psr\SimpleCache\CacheInterface)
+$cache = new ArrayCachePool();
 
 // set old, incorrect cache
-$pool->set("rf_api_client." . str_replace('@', '_', $username) . ".tokens", [
+$cache->set("rf_api_client." . str_replace('@', '_', $username) . ".tokens", [
     [
         "DomainUrl" => "rushfiles.com",
         "DomainToken" => "token"
@@ -44,9 +45,9 @@ function MyLogin($username, $password, $domain, CacheInterface $cache)
 }
 
 $start = microtime(true);
-$user = MyLogin($username, $password, $domain, $pool);
+$user = MyLogin($username, $password, $domain, $cache);
 echo "Cache miss login time: " . (microtime(true) - $start) . "ms.\n";
 
 $start = microtime(true);
-$user = MyLogin($username, $password, $domain, $pool);
+$user = MyLogin($username, $password, $domain, $cache);
 echo "Cache hit login time: " . (microtime(true) - $start) . "ms.\n";

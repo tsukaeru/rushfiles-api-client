@@ -8,7 +8,8 @@ use Tsukaeru\RushFiles\API\Client;
 // import $username, $password and $domain
 require_once "_auth_params.php";
 
-$pool = new ArrayCachePool();
+// any cache instance implementing PSR-16 (Psr\SimpleCache\CacheInterface)
+$cache = new ArrayCachePool();
 
 $client = new Client();
 
@@ -17,7 +18,7 @@ for ($i = 0; $i < 2; ++$i)
     $start = microtime(true);
 
     // Login using cache and specifying domain
-    $user = $client->Login($username, $password, null, $pool);
+    $user = $client->Login($username, $password, null, $cache);
 
     echo "$i: Login function took " . (microtime(true) - $start) . "ms.\n";    
 }
