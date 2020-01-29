@@ -10,6 +10,7 @@ use function GuzzleHttp\json_encode;
 use Tsukaeru\RushFiles\API\DTO\CreatePublicLink;
 use Tsukaeru\RushFiles\API\DTO\ClientJournal;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
+use Tsukaeru\RushFiles\API\DTO\EventReport;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
 use Psr\SimpleCache\CacheInterface;
@@ -503,6 +504,31 @@ class Client
     }
 
     /**
+     * @param EventReport $eventReport
+     * @param string $shareId
+     * @param string $virtualFileId
+     * @param string $domain
+     * @param string $token
+     *
+     * @return array
+     */
+    public function FileEventReport(EventReport $eventReport, $shareId, $virtualFileId, $domain, $token)
+    {
+        $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
+
+        try {
+            $request = new Request('POST', $this->FileEventReportURL($domain, $shareId, $virtualFileId), $headers, $eventReport->getJSON());
+            $response = $this->client->send($request);
+        } catch (ClientException $exception) {
+            $this->throwException($exception->getResponse(), "Could not get an event report.");
+        }
+
+        $body = json_decode($response->getBody(), true);
+
+        return $body['Data'];
+    }
+
+    /**
      * @param string $url
      * @param string $token
      * @param string $path
@@ -605,5 +631,9 @@ class Client
     private function PublicLinksURL($domain, $linkId = null)
     {
         return "https://clientgateway.$domain/api/publiclinks" . (!empty($linkId) ? "/$linkId" : '');
+    }
+    private function FileEventReportURL($domain, $shareId, $virtualFileId)
+    {
+        return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$virtualFileId/eventreport";
     }
 }
