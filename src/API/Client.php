@@ -68,11 +68,11 @@ class Client
         'Content-Type' => 'application/json',
     ];
 
-    public function __construct()
+    public function __construct(array $config = [])
     {
         $this->deviceOS = php_uname('s') . ' ' . php_uname('');
 
-        $this->client = new HttpClient();
+        $this->client = new HttpClient($config);
     }
 
     /**
