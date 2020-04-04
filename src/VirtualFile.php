@@ -234,7 +234,6 @@ abstract class VirtualFile
      */
     public function getEvents(EventReport $eventReport)
     {
-        $eventsRaw = $this->client->FileEventReport($eventReport, $this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
-        return Collection::make($eventsRaw);
+        return $this->client->FileEventReport($eventReport, $this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
     }
 }
