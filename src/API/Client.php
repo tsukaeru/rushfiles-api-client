@@ -321,7 +321,8 @@ class Client
     public function GetFileContent($shareId, $uploadName, $domain, $token)
     {
         try {
-            $response = $this->client->get($this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
+            $request = new Request('GET', $this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
+            $response = $this->client->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not download file.");
         }
@@ -632,6 +633,7 @@ class Client
     {
         return "https://clientgateway.$domain/api/publiclinks" . (!empty($linkId) ? "/$linkId" : '');
     }
+
     private function FileEventReportURL($domain, $shareId, $virtualFileId)
     {
         return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$virtualFileId/eventreport";
