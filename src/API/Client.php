@@ -380,7 +380,7 @@ class Client
             'ParrentId' => $parentId,
             'EndOfFile' => is_file($path) ? filesize($path) : 0,
             'PublicName' => basename($path),
-            'Attributes' => is_dir($path) ? self::FILE_ATTRIBUTES['DIRECTORY'] : self::FILE_ATTRIBUTES['NORMAL'],
+            'Attributes' => is_dir($path) ? RfVirtualFile::DIRECTORY : RfVirtualFile::NORMAL,
             'CreationTime' => date('c', filectime($path)),
             'LastAccessTime' => date('c', fileatime($path)),
             'LastWriteTime' => date('c', filemtime($path)),
@@ -390,7 +390,7 @@ class Client
         $journal = [
             'RfVirtualFile' => $fileProperties,
             'TransmitId' => Uuid::uuid1(),
-            'ClientJournalEventType' => self::CLIENT_JOURNAL_EVENT_TYPE['UPDATE'],
+            'ClientJournalEventType' => ClientJournal::UPDATE,
             'DeviceId' => $this->getDeviceId(),
         ];
 
@@ -424,7 +424,7 @@ class Client
     {
         $journal = [
             'TransmitId' => Uuid::uuid1(),
-            'ClientJournalEventType' => self::CLIENT_JOURNAL_EVENT_TYPE['DELETE'],
+            'ClientJournalEventType' => ClientJournal::DELETE,
             'DeviceId' => $this->getDeviceId(),
         ];
 
