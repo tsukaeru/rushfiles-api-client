@@ -170,7 +170,7 @@ abstract class VirtualFile
         $this->client->DeleteVirtualFile($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
 
         if ($this->parent && $this->parent->children) {
-            $this->parent->children->forget($this->getName());
+            $this->parent->children->forget($this->getInternalName());
         }
     }
 
