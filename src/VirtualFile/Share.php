@@ -4,6 +4,10 @@ namespace Tsukaeru\RushFiles\VirtualFile;
 
 class Share extends Directory
 {
+    const READ_ONLY = 0;
+    const READ_WRITE = 1;
+    const OWNER = 2;
+
     /**
      * @inheritDoc
      */
@@ -41,6 +45,11 @@ class Share extends Directory
      */
     public function getParent()
     {
-        return $this;
+        return null;
+    }
+
+    public function getPermissions()
+    {
+        return $this->properties->get('ShareAssociationType');
     }
 }
