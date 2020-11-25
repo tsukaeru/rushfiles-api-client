@@ -169,4 +169,25 @@ class Directory extends VirtualFile
 
         throw new InvalidPath($this->getFullPath());
     }
+
+    /**
+     * @param string $name
+     * @return VirtualFile
+     */
+    public function createDirectory($name)
+    {
+        $rfFile = new RfVirtualFile($this->getShareId(), $this->getInternalName(), [
+            'EndOfFile' => 0,
+            'PublicName' => $name,
+            'Attributes' => RfVirtualFile::DIRECTORY,
+            'CreationTime' => date('c'),
+            'LastAccessTime' => date('c'),
+            'LastWriteTime' => date('c'),
+        ]);
+        $newFile = $this->client->CreateVirtualFile($rfFile, null, $this->domain, $this->token);
+        if ($this->children !== null)
+            $this->children->put($name, $newFile);
+        
+        return $newFile;
+    }
 }

@@ -353,10 +353,8 @@ class Client
 
         $data = json_decode($response->getBody(), true);
 
-        $uploadURL = $data['Data']['Url'];
-
-        if ($uploadURL) {
-            $this->uploadFileContents($uploadURL, $token, $path);
+        if (isset($data['Data']['Url']) && $data['Data']['Url']) {
+            $this->uploadFileContents($data['Data']['Url'], $token, $path);
         }
 
         return $this->GetFile($rfFile->getShareId(), $rfFile->getInternalName(), $domain, $token);
