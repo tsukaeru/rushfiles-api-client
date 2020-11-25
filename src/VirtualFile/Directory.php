@@ -104,7 +104,7 @@ class Directory extends VirtualFile
      */
     public function uploadFile($path)
     {
-        $rfFile = new RfVirtualFile($this->getShareId(), $this->getParent()->getInternalName(), $path);
+        $rfFile = new RfVirtualFile($this->getShareId(), $this->getInternalName(), $path);
         $newFile = $this->client->CreateVirtualFile($rfFile, $path, $this->domain, $this->token);
         if ($this->children !== null)
             $this->children->put(basename($path), $newFile);
@@ -167,7 +167,7 @@ class Directory extends VirtualFile
             }
         }
 
-        throw new InvalidPath($this->getFullPath());
+        throw new InvalidPath($this->getFullPath().DIRECTORY_SEPARATOR.$child_name);
     }
 
     /**

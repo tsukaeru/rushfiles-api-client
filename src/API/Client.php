@@ -322,7 +322,7 @@ class Client
     {
         try {
             $request = new Request('GET', $this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->client->send($request, ['decode_content' => false]);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not download file.");
         }
@@ -542,7 +542,7 @@ class Client
         try {
             $request = new Request('PUT', $url, $headers, fopen($path, 'r'));
             $response = $this->client->send($request);
-            if ($response->getStatusCode() !== 201) {
+            if ($response->getStatusCode() !== 200 && $response->getStatusCode() !== 201) {
                 $this->throwException($response, "Error while uploading file content.");
             }
         } catch (ClientException $exception) {
