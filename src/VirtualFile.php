@@ -8,6 +8,7 @@ use Tsukaeru\RushFiles\VirtualFile\File;
 use Tsukaeru\RushFiles\VirtualFile\Directory;
 use Tsukaeru\RushFiles\VirtualFile\Share;
 use Tsukaeru\RushFiles\API\DTO\CreatePublicLink;
+use Tsukaeru\RushFiles\API\DTO\EventReport;
 use Tsukaeru\RushFiles\API\Client;
 
 abstract class VirtualFile
@@ -224,5 +225,15 @@ abstract class VirtualFile
             throw new \Exception("New public link could not be found.");
 
         return $link;
+    }
+
+    /**
+     * @param EventReport $eventReport
+     *
+     * @return array
+     */
+    public function getEvents(EventReport $eventReport)
+    {
+        return $this->client->FileEventReport($eventReport, $this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
     }
 }
