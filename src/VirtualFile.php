@@ -236,4 +236,13 @@ abstract class VirtualFile
     {
         return $this->client->FileEventReport($eventReport, $this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
     }
+
+    public function getFullPath()
+    {
+        if ($this->getParent() && $this->getParent()->getInternalName() !== $this->getInternalName()) {
+            return $this->getParent()->getFullPath() . DIRECTORY_SEPARATOR . $this->getName();
+        } else {
+            return DIRECTORY_SEPARATOR . $this->getName();
+        }
+    }
 }

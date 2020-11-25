@@ -5,6 +5,7 @@ namespace Tsukaeru\RushFiles\VirtualFile;
 use Tsukaeru\RushFiles\VirtualFile;
 use Illuminate\Support\Collection;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
+use Tsukaeru\RushFiles\Exceptions\InvalidPath;
 
 class Directory extends VirtualFile
 {
@@ -126,5 +127,46 @@ class Directory extends VirtualFile
         }
 
         return $path;
+    }
+
+    /**
+     * @param string
+     * @return VirtualFile|null
+     */
+    public function getChildByName($name)
+    {
+        foreach ($this->getChildren() as $child) {
+            if ($child->getName() == $name)
+                return $child;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param string|array $path
+     * 
+     * @return VirtualFile
+     */
+    public function getChildByPath($path, $refresh = false)
+    {
+        if (is_string($path)) {
+            $path = explode(DIRECTORY_SEPARATOR, $path);
+        }
+
+        $child_name = array_shift($path);
+
+        if ($child_name == '..') return $this->getParent()->getChildByPath($path, $refresh);
+
+        foreach ($this->getChildren($refresh) as $file) {
+            if ($file->getName() == $child_name) {
+                if (empty($path)) return $file;
+                if ($file->isDirectory()) return $file->getChildByPath($path, $refresh);
+
+                break;
+            }
+        }
+
+        throw new InvalidPath($this->getFullPath());
     }
 }
