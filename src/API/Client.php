@@ -511,7 +511,7 @@ class Client
      *
      * @return array
      */
-    public function FileEventReport(EventReport $eventReport, $shareId, $virtualFileId, $domain, $token)
+    public function GetFileEventReport(EventReport $eventReport, $shareId, $virtualFileId, $domain, $token)
     {
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
