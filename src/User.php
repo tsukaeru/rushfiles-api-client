@@ -2,22 +2,11 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
+use Tsukaeru\RushFiles\API\AuthToken;
 use Tsukaeru\RushFiles\API\Client;
 
 class User
 {
-    /**
-     * @var string
-     */
-    protected $username = '';
-
-    /**
-     * @var Collection
-     */
-    protected $domainTokens = [];
-
     /**
      * @var Collection|null of Tsukaeru\RushFiles\API\VirtualFile
      */
@@ -29,22 +18,17 @@ class User
     protected $client;
 
     /**
-     * @param string $username
-     * @param array $tokens domain=>domainToken array
+     * @var AuthToken
+     */
+    protected $authToken;
+
+    /**
+     * @param AuthToken $auth
      * @param Client $client API Client used for connection
      */
-    public function __construct($username, $tokens, Client $client)
+    public function __construct(AuthToken $auth, Client $client)
     {
-        $this->username = $username;
-
-        if (Arr::isAssoc($tokens)) {
-            $this->domainTokens = Collection::make($tokens);
-        } else {
-            $this->domainTokens = Collection::make($tokens)->mapWithKeys(function ($data) {
-                return [$data['DomainUrl'] => $data['DomainToken']];
-            });
-        }
-
+        $this->authToken = $auth;
         $this->client = $client;
     }
 
@@ -53,7 +37,7 @@ class User
      */
     public function getUsername()
     {
-        return $this->username;
+        return $this->authToken->getUsername();
     }
 
     /**
@@ -61,18 +45,15 @@ class User
      */
     public function getDomains()
     {
-        return $this->domainTokens->keys();
+        return $this->authToken->getDomains();
     }
 
     /**
-     * Returns domainToken for the domain or first available token if domain is not specified.
-     * (user can often have shares on only one domain and then there is no need to specify it)
-     *
      * @return string
      */
-    public function getToken($domain = null)
+    public function getAccessToken()
     {
-        return $domain ? $this->domainTokens->get($domain) : $this->domainTokens->first();
+        return $this->authToken->getAccessToken();
     }
 
     /**
@@ -83,10 +64,10 @@ class User
         if ($this->shares === null)
         {
             $self = $this;
-            $this->shares = $this->domainTokens->flatMap(function ($token, $domain) use ($self) {
-                $rawShares = $this->client->GetUserShares($this->username, $token, $domain);
-                return collect($rawShares)->mapWithKeys(function ($data) use ($domain, $token, $self) {
-                    return [$data['Id'] => VirtualFile::create($data, $domain, $token, $self->client)];
+            $this->shares = collect($this->getDomains())->flatMap(function ($domain) use ($self) {
+                $rawShares = $this->client->GetUserShares($this->getUsername(), $self->getAccessToken(), $domain);
+                return collect($rawShares)->mapWithKeys(function ($data) use ($domain, $self) {
+                    return [$data['Id'] => VirtualFile::create($data, $domain, $self->getAccessToken(), $self->client)];
                 });
             });
         }
@@ -99,6 +80,6 @@ class User
      */
     public function getShare($id)
     {
-        return Collection::make($this->getShares())->get($id);
+        return collect($this->getShares())->get($id);
     }
 }

@@ -46,10 +46,28 @@ class Client
         'MISSING_CREATE_EVENT' =>17,
     ];
 
+    const DEVICE_PC = 0;
+    const DEVICE_ANDROID_TABLET = 1;
+    const DEVICE_ANDROID_PHONE = 2;
+    const DEVICE_IPHONE = 3;
+    const DEVICE_IPAD = 4;
+    const DEVICE_IPAD_MINE = 5;
+    const DEVICE_WINDOWS_PHONE = 6;
+    const DEVICE_WINDOWS_TABLET = 7;
+    const DEVICE_UNKNOWN = 8;
+    const DEVICE_WEB_CLIENT = 9;
+    const DEVICE_MAC = 10;
+    const DEVICE_IPAD_MINI = 11;
+
     /**
      * @var GuzzleHttp\Client
      */
     protected $client;
+
+    /**
+     * @var string
+     */
+    protected $issuer = 'https://auth.rushfiles.com';
 
     /**
      * @var string
@@ -60,6 +78,31 @@ class Client
      * @var string
      */
     private $deviceOS;
+
+    /**
+     * @var int
+     */
+    private $deviceType = self::DEVICE_UNKNOWN;
+
+    /**
+     * @var string
+     */
+    private $clientId;
+
+    /**
+     * @var string
+     */
+    private $clientSecret;
+
+    /**
+     * @var string
+     */
+    protected $redirectUrl;
+
+    /**
+     * @var array
+     */
+    protected $scopes = ['openid', 'profile', 'domain_api', 'offline_access'];
 
     /**
      * @var array
@@ -73,7 +116,9 @@ class Client
     {
         $this->deviceOS = php_uname('s') . ' ' . php_uname('');
 
-        $this->client = new HttpClient();
+        $this->client = new HttpClient([
+            'verify' => false,
+        ]);
     }
 
     /**
@@ -105,6 +150,26 @@ class Client
     }
 
     /**
+     * @param int $deviceType
+     * 
+     * @return self
+     */
+    public function setDeviceType($deviceType)
+    {
+        $this->deviceType = $deviceType;
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getDeviceType()
+    {
+        return $this->deviceType;
+    }
+
+    /**
      * @param \GuzzleHttp\Client $client
      */
     public function setHttpClient(HttpClient $client)
@@ -115,54 +180,80 @@ class Client
     }
 
     /**
-     * Automates getting user's domain, registering device and retrieving tokens,
-     * and packs everything into User object.
-     *
-     * @param string $username
-     * @param string $password
-     * @param string $domain
-     *
-     * @return User
+     * @param string $clientId
+     * 
+     * @return self
      */
-    public function Login($username, $password, $domain = null, CacheInterface $cache = null)
+    public function setClientId($clientId)
     {
-        $username = strtolower($username);
-        
-        /**
-         * User domain
-         */
-        if (!is_string($domain)) {
-            $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".domain";
-            
-            if ($cache) {
-                $domain = $cache->get($cacheKey);
-            }
+        $this->clientId = $clientId;
 
-            if ($domain === null) {
-                $domain = $this->GetUserDomain($username);
+        return $this;
+    }
 
-                if ($cache) {
-                    $cache->set($cacheKey, $domain);
-                }
-            }
-        }
-        
-        /**
-         * Device registration
-         */
-        $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".deviceId";
-        
-        if ($cache === null || $cache->get($cacheKey) != $this->getDeviceId()) {
-            $this->RegisterDevice($username, $password, $domain);
+    /**
+     * @return string
+     */
+    public function getClientId()
+    {
+        return $this->clientId;
+    }
 
-            if ($cache) {
-                $cache->set($cacheKey, $this->getDeviceId());
-            }
-        }
+    /**
+     * @param string $clientSecret
+     * 
+     * @return self
+     */
+    public function setClientSecret($clientSecret)
+    {
+        $this->clientSecret = $clientSecret;
 
-        $tokens = $this->GetDomainTokens($username, $password, $domain);
+        return $this;
+    }
 
-        return new User($username, $tokens, $this);
+    /**
+     * @return string
+     */
+    private function getClientSecret()
+    {
+        return $this->clientSecret;
+    }
+
+    /**
+     * @param string $redirectUrl
+     * 
+     * @return self
+     */
+    public function setRedirectUrl($redirectUrl)
+    {
+        $this->redirectUrl = $redirectUrl;
+
+        return $this;
+    }
+
+    private function getRedirectUrl()
+    {
+        return $this->redirectUrl;
+    }
+
+    /**
+     * @param string $issuer URL of authority (without the path)
+     * 
+     * @return self
+     */
+    public function setIssuer($issuer)
+    {
+        $this->issuer = $issuer;
+
+        return $this;
+    }
+
+    /**
+     * return string
+     */
+    public function getIssuer()
+    {
+        return $this->issuer;
     }
 
     /**
@@ -189,36 +280,55 @@ class Client
     }
 
     /**
-     * RegisterDevice must be called at least once for every username/deviceId combination.
-     * Subsequent calls won't cause errors so it can be called every time, or invocation
-     * can be remembered not to make needless calls.
-     * This client does not keep track of registration on itself.
-     *
-     * @param string $username
-     * @param string $password
-     * @param string $domain
+     * 
      */
-    public function RegisterDevice($username, $password, $domain)
+    public function GetTokenThroughResourceOwnerPasswordCredentials($username, $password)
     {
-        $deviceAssociation = [
-            'UserName' => $username,
-            'Password' => $password,
-            'DeviceName' => $this->deviceName,
-            'DeviceOs' => $this->deviceOS,
-            'DeviceType' => 8, // unknown
-        ];
+        return $this->GetAccessToken([
+            'grant_type' => 'password',
+            'username' => $username,
+            'password' => $password,
+            'scope' => implode(' ', $this->scopes),
+        ]);
+    }
 
+    public function GetAuthorizationCodeUrl()
+    {
+        return $this->issuer . '/connect/authorize?' . http_build_query([
+            'client_id' => $this->getClientId(),
+            'redirect_uri' => $this->getRedirectUrl(),
+            'response_type' => 'code',
+            'scope' => implode(' ', $this->scopes),
+            'arc_values' => "deviceName:{$this->getDeviceName()} deviceOs:{$this->deviceOS} deviceType:{$this->getDeviceType()}",
+        ], "", "&", PHP_QUERY_RFC3986);
+    }
+
+    public function GetTokenThroughAuthorizationCode($code)
+    {
+        return $this->GetAccessToken([
+            'grant_type' => 'authorization_code',
+            'code' => $code,
+            'redirect_uri' => $this->getRedirectURL(),
+        ]);
+    }
+
+    private function GetAccessToken($requestData)
+    {
         try {
-            $request = new Request('PUT', $this->RegisterDeviceURL($domain, $this->getDeviceId()), $this->defaultHeaders, json_encode($deviceAssociation));
-            $this->client->send($request);
+            $response = $this->client->post($this->TokenURL(), [
+                'auth' => [$this->getClientId(), $this->getClientSecret()],
+                'form_params' => $requestData,
+            ]);
+            $tokenData = json_decode($response->getBody(), true);
+            return new AuthToken($tokenData);
         } catch (ClientException $exception) {
-            $this->throwException($exception->getResponse(), "Could not register device.");
+            
         }
     }
 
     /**
      * @param string $username
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      * @param string $domain
      *
      * @return array
@@ -241,7 +351,7 @@ class Client
      * @param string $shareId
      * @param string $internalName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -263,7 +373,7 @@ class Client
      * @param string $shareId
      * @param string $internalName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return VirtualFile
      */
@@ -282,39 +392,10 @@ class Client
     }
 
     /**
-     * @param string $username
-     * @param string $password
-     * @param string $domain
-     *
-     * @return array
-     */
-    public function GetDomainTokens($username, $password, $domain)
-    {
-        $loginData = [
-            'UserName' => $username,
-            'Password' => $password,
-            'DeviceId' => $this->getDeviceId(),
-            'Longitude' => 0,
-            'Latitude' => 0,
-        ];
-
-        try {
-            $request = new Request('POST', $this->DomainTokensURL($domain), $this->defaultHeaders, json_encode($loginData));
-            $response = $this->client->send($request);
-        } catch (ClientException $exception) {
-            $this->throwException($exception->getResponse(), "Fail to retrieve domain's token.");
-        }
-
-        $body = json_decode($response->getBody(), true);
-
-        return $body['Data']['DomainTokens'];
-    }
-
-    /**
      * @param string $shareId
      * @param string $uploadName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return StreamInterface|string
      */
@@ -334,7 +415,7 @@ class Client
      * @param RfVirtualFile $rfFile
      * @param string $path Path to file/directory to be uploaded/created
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return VirtualFile
      */
@@ -366,7 +447,7 @@ class Client
      * @param string $internalName
      * @param string $path Path to file/directory to be updated
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return VirtualFile
      */
@@ -416,7 +497,7 @@ class Client
      * @param string $shareId
      * @param string $internalName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      */
     public function DeleteVirtualFile($shareId, $internalName, $domain, $token)
     {
@@ -440,7 +521,7 @@ class Client
      * @param string $shareId
      * @param string $virtualFileId
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -461,9 +542,9 @@ class Client
     /**
      * @param CreatePublicLink $linkDto
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
-     * @return array
+     * @return array|string
      */
     public function CreatePublicLink(CreatePublicLink $linkDto, $domain, $token)
     {
@@ -484,7 +565,7 @@ class Client
     /**
      * @param string $id
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -507,7 +588,7 @@ class Client
      * @param string $shareId
      * @param string $virtualFileId
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -529,7 +610,7 @@ class Client
 
     /**
      * @param string $url
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      * @param string $path
      */
     private function uploadFileContents($url, $token, $path)
@@ -573,12 +654,12 @@ class Client
     }
 
     /**
-     * @param string|Tsukaeru\RushFiles\API\User
+     * @param Tsukaeru\RushFiles\API\AuthToken|string
      */
     private function AuthHeaders($token)
     {
         return [
-            'Authorization' => 'DomainToken ' . (is_object($token) ? $token->getToken() : $token),
+            'Authorization' => 'Bearer ' . ($token instanceof AuthToken ? $token->getAccessToken() : $token),
         ];
     }
 
@@ -635,5 +716,10 @@ class Client
     private function FileEventReportURL($domain, $shareId, $virtualFileId)
     {
         return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$virtualFileId/eventreport";
+    }
+
+    private function TokenURL()
+    {
+        return $this->issuer . '/connect/token';
     }
 }

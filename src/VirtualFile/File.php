@@ -3,7 +3,7 @@
 namespace Tsukaeru\RushFiles\VirtualFile;
 
 use Tsukaeru\RushFiles\VirtualFile;
-use Illuminate\Support\Collection;
+use Tightenco\Collect\Support\Collection;
 
 class File extends VirtualFile
 {

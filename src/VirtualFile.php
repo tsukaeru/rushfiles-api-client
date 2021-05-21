@@ -2,8 +2,8 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Arr;
+use Tightenco\Collect\Support\Collection;
+use Tightenco\Collect\Support\Arr;
 use Tsukaeru\RushFiles\VirtualFile\File;
 use Tsukaeru\RushFiles\VirtualFile\Directory;
 use Tsukaeru\RushFiles\VirtualFile\Share;
@@ -234,7 +234,7 @@ abstract class VirtualFile
      */
     public function getEvents(EventReport $eventReport)
     {
-        return $this->client->FileEventReport($eventReport, $this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
+        return $this->client->GetFileEventReport($eventReport, $this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
     }
 
     public function getFullPath()

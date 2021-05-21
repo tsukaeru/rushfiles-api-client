@@ -32,135 +32,7 @@ class ClientTest extends TestCase
         $this->assertEquals('GET', $request->getMethod());
         $this->assertEquals('https://global.rushfiles.com/getuserdomain.aspx?useremail=admin@example.com', $request->getUri());
     }
-
-    public function testRegisterDevice()
-    {
-        $history = [];
-        list($client, $mock) = $this->prepareClient($history);
-
-        $mock->append(new Response(201, [], json_encode(['Message' => 'Ok.'])));
-
-        $client->RegisterDevice('admin@example.com', 'password', 'cloudfile.jp');
-
-        $request = $history[0]['request'];
-        $this->assertEquals('PUT', $request->getMethod());
-        $this->assertRegExp('/https:\/\/clientgateway.cloudfile.jp\/api\/devices\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/', (string)$request->getUri());
-        $this->assertArraySubset([
-            'Accept' => ['application/json'],
-            'Content-Type' => ['application/json'],
-        ], $request->getHeaders());
-        $body = json_decode($request->getBody(), true);
-        $this->assertArraySubset([
-            'UserName' => 'admin@example.com',
-            'Password' => 'password',
-        ], $body);
-        $this->assertArraySubset(['DeviceName', 'DeviceOs', 'DeviceType'], collect($body)->keys()->sort()->values());
-    }
-
-    public function testRegisterDeviceThrowsOnError()
-    {
-        list($client, $mock) = $this->prepareClient();
-
-        $mock->append(new Response(400, [], json_encode([
-            'Message' => 'ErrorMsg',
-        ])));
-
-        $this->expectExceptionMessage('ErrorMsg');
-
-        $client->RegisterDevice('admin@example.com', 'password', 'cloudfile.jp');
-    }
-
-    public function testGetDomainTokens()
-    {
-        $history = [];
-        list($client, $mock) = $this->prepareClient($history);
-
-        $mock->append(new Response(200, [], json_encode([
-            'Message' => 'Ok.',
-            'Data' => [
-                'DomainTokens' => [
-                    'cloudfile.jp' => 'token',
-                ],
-            ],
-        ])));
-
-        $tokens = $client->GetDomainTokens('admin@example.com', 'password', 'cloudfile.jp');
-
-        $this->assertEquals(['cloudfile.jp' => 'token'], $tokens);
-
-        $request = $history[0]['request'];
-        $this->assertEquals('POST', $request->getMethod());
-        $this->assertEquals('https://clientgateway.cloudfile.jp/api/domaintokens', $request->getUri());
-        $this->assertArraySubset([
-            'Accept' => ['application/json'],
-            'Content-Type' => ['application/json'],
-        ], $request->getHeaders());
-        $body = json_decode($request->getBody(), true);
-        $this->assertArraySubset([
-            'UserName' => 'admin@example.com',
-            'Password' => 'password',
-        ], $body);
-        $this->assertArraySubset(['DeviceId', 'Latitude', 'Longitude'], collect($body)->keys()->sort()->values());
-    }
-
-    public function testGetDomainTokensThrowsOnError()
-    {
-        list($client, $mock) = $this->prepareClient();
-
-        $mock->append(new Response(400, [], json_encode([
-            'Message' => 'ErrorMsg',
-        ])));
-
-        $this->expectExceptionMessage('ErrorMsg');
-
-        $client->GetDomainTokens('admin@example.com', 'password', 'cloudfile.jp');
-    }
-
-    public function testLoginWithoutDomain()
-    {
-        $history = [];
-        list($client, $mock) = $this->prepareClient($history);
-
-        $mock->append(new Response(200, [], 'admin@example.com,cloudfile.jp'));
-        $mock->append(new Response(201, [], json_encode(['Message' => 'Ok.'])));
-        $mock->append(new Response(200, [], json_encode([
-            'Message' => 'Ok.',
-            'Data' => [
-                'DomainTokens' => [
-                    'cloudfile.jp' => 'token',
-                ],
-            ],
-        ])));
-
-        $login = $client->Login('admin@example.com', 'password');
-
-        $this->assertInstanceOf(User::class, $login);
-        $this->assertEquals('admin@example.com', $login->getUsername());
-        $this->assertEquals(['cloudfile.jp'], $login->getDomains()->toArray());
-    }
-
-    public function testLoginWithDomain()
-    {
-        $history = [];
-        list($client, $mock) = $this->prepareClient($history);
-
-        $mock->append(new Response(201, [], json_encode(['Message' => 'Ok.'])));
-        $mock->append(new Response(200, [], json_encode([
-            'Message' => 'Ok.',
-            'Data' => [
-                'DomainTokens' => [
-                    'cloudfile.jp' => 'token',
-                ],
-            ],
-        ])));
-
-        $login = $client->Login('admin@example.com', 'password', 'cloudfile.jp');
-
-        $this->assertInstanceOf(User::class, $login);
-        $this->assertEquals('admin@example.com', $login->getUsername());
-        $this->assertEquals(['cloudfile.jp'], $login->getDomains()->toArray());
-    }
-
+    
     public function testGetUserShares()
     {
         $history = [];
@@ -178,7 +50,7 @@ class ClientTest extends TestCase
         $request = $history[0]['request'];
         $this->assertEquals('GET', $request->getMethod());
         $this->assertStringStartsWith('https://clientgateway.cloudfile.jp/api/users/admin@example.com/shares', (string)$request->getUri());
-        $this->assertArraySubset(['Authorization' => ['DomainToken token']], $request->getHeaders());
+        $this->assertArraySubset(['Authorization' => ['Bearer token']], $request->getHeaders());
     }
 
     public function testGetUserSharesThrowsOnError()
@@ -212,7 +84,7 @@ class ClientTest extends TestCase
         $request = $history[0]['request'];
         $this->assertEquals('GET', $request->getMethod());
         $this->assertEquals('https://clientgateway.cloudfile.jp/api/shares/shareId/virtualfiles/internalName/children', $request->getUri());
-        $this->assertArraySubset(['Authorization' => ['DomainToken token']], $request->getHeaders());
+        $this->assertArraySubset(['Authorization' => ['Bearer token']], $request->getHeaders());
     }
 
     public function testGetDirectoryChildrenThrowsOnError()
