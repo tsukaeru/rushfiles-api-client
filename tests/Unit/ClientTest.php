@@ -32,7 +32,7 @@ class ClientTest extends TestCase
         $this->assertEquals('GET', $request->getMethod());
         $this->assertEquals('https://global.rushfiles.com/getuserdomain.aspx?useremail=admin@example.com', $request->getUri());
     }
-    
+
     public function testGetUserShares()
     {
         $history = [];
@@ -221,6 +221,111 @@ class ClientTest extends TestCase
             'Content-Range' => ['bytes 0-7/8'],
         ], $request->getHeaders());
         $this->assertEquals($request->getBody(), 'contents');
+    }
+
+    public function testGetAuthorizationCodeUrl()
+    {
+        $client = new Client();
+
+        $client->setIssuer("https://auth.example.com");
+        $client->setClientId('ClientId');
+        $client->setRedirectUrl('https://example.org');
+
+        $url = $client->GetAuthorizationCodeUrl();
+
+        $this->assertEquals('https', parse_url($url, PHP_URL_SCHEME));
+        $this->assertEquals('auth.example.com', parse_url($url, PHP_URL_HOST));
+        $this->assertEquals('/connect/authorize', parse_url($url, PHP_URL_PATH));
+        $query = [];
+        parse_str(parse_url($url, PHP_URL_QUERY), $query);
+        $this->assertArraySubset([
+            'client_id' => 'ClientId',
+            'redirect_uri' => 'https://example.org',
+            'response_type' => 'code',
+            'scope' => 'openid profile domain_api offline_access',
+        ], $query);
+    }
+
+    public function testGetTokenThroughAuthorizationCode()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $accessToken = 'header.' . base64_encode(json_encode([
+            'exp' => date_create("+5 min")->getTimestamp(),
+            'sub' => 'username',
+            'primary_domain' => 'example.com',
+        ])) . '.signature';
+
+        $mock->append(new Response(200, [], json_encode([
+            'access_token' => $accessToken,
+            'expires_in' => 300,
+            'token_type' => 'Bearer',
+            'refresh_token' => 'refresh',
+        ])));
+
+        $client->setClientId('client_id');
+        $client->setClientSecret('client_secret');
+        $client->setRedirectUrl('https://example.com');
+
+        $token = $client->GetTokenThroughAuthorizationCode('AuthCode');
+
+        $request = $history[0]['request'];
+        $this->assertEquals('https://auth.rushfiles.com/connect/token', $request->getUri());
+        $this->assertEquals('Basic ' . base64_encode('client_id:client_secret'), $request->getHeader('Authorization')[0]);
+        $body = [];
+        $request->getBody()->rewind();
+        parse_str($request->getBody()->getContents(), $body);
+        $this->assertArraySubset([
+            'grant_type' => 'authorization_code',
+            'code' => 'AuthCode',
+            'redirect_uri' => 'https://example.com',
+        ], $body);
+
+        $this->assertEquals($accessToken, $token->getAccessToken());
+        $this->assertTrue($token->isValid());
+        $this->assertTrue($token->isRefreshable());
+    }
+
+    public function testGetTokenThroughResourceOwnerPasswordCredentials()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $accessToken = 'header.' . base64_encode(json_encode([
+            'exp' => date_create("+5 min")->getTimestamp(),
+            'sub' => 'username',
+            'primary_domain' => 'example.com',
+        ])) . '.signature';
+
+        $mock->append(new Response(200, [], json_encode([
+            'access_token' => $accessToken,
+            'expires_in' => 300,
+            'token_type' => 'Bearer',
+            'refresh_token' => 'refresh',
+        ])));
+
+        $client->setClientId('client_id');
+        $client->setClientSecret('client_secret');
+
+        $token = $client->GetTokenThroughResourceOwnerPasswordCredentials('UserName', 'Password');
+
+        $request = $history[0]['request'];
+        $this->assertEquals('https://auth.rushfiles.com/connect/token', $request->getUri());
+        $this->assertEquals('Basic ' . base64_encode('client_id:client_secret'), $request->getHeader('Authorization')[0]);
+        $body = [];
+        $request->getBody()->rewind();
+        parse_str($request->getBody()->getContents(), $body);
+        $this->assertArraySubset([
+            'grant_type' => 'password',
+            'username' => 'UserName',
+            'password' => 'Password',
+            'scope' => 'openid profile domain_api offline_access',
+        ], $body);
+
+        $this->assertEquals($accessToken, $token->getAccessToken());
+        $this->assertTrue($token->isValid());
+        $this->assertTrue($token->isRefreshable());
     }
 
     private function prepareClient(array &$history = [])

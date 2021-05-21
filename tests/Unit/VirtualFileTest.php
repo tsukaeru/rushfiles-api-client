@@ -205,6 +205,20 @@ class VirtualFileTest extends TestCase
         $this->assertEquals($expected['InternalName'], $file->getInternalName());
         $this->assertEquals($expected['ShareId'], $file->getShareId());
         $this->assertEquals($expected['Tick'], $file->getTick());
+        $this->assertEquals($expected['Name'] ?? $expected['PublicName'], $file->getName());
+    }
+
+    public function testThrowOnUnknownPropertiesArray()
+    {
+        $client = $this->createMock(Client::class);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        VirtualFile::create([
+            'InternalName' => 'id',
+            'ShareId' => 'id',
+            'Tick' => 2,
+        ], 'cloudfile.jp', 'token', $client);
     }
 
     public function virtualFilesProvider()
@@ -216,6 +230,7 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
+                    'PublicName' => 'pname',
                 ],
                 [
                     'isFile' => true,
@@ -223,6 +238,7 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
+                    'PublicName' => 'pname',
                     'Class' => File::class,
                 ],
             ],
@@ -232,6 +248,7 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
+                    'PublicName' => 'pname',
                 ],
                 [
                     'isFile' => false,
@@ -239,6 +256,7 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'iname',
                     'ShareId' => 'sId',
                     'Tick' => 1,
+                    'PublicName' => 'pname',
                     'Class' => Directory::class,
                 ],
             ],
@@ -247,6 +265,7 @@ class VirtualFileTest extends TestCase
                     'Id' => 'id',
                     'ShareTick' => 2,
                     'ShareType' => 0,
+                    'Name' => 'sname',
                 ],
                 [
                     'isFile' => false,
@@ -254,6 +273,7 @@ class VirtualFileTest extends TestCase
                     'InternalName' => 'id',
                     'ShareId' => 'id',
                     'Tick' => 2,
+                    'Name' => 'sname',
                     'Class' => Share::class,
                 ],
             ],
