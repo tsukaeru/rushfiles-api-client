@@ -14,9 +14,12 @@ use org\bovigo\vfs\vfsStream;
 use Tsukaeru\RushFiles\API\DTO\ClientJournal;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\VirtualFile;
+use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 
 class ClientTest extends TestCase
 {
+    use ArraySubsetAsserts;
+
     public function testGetUserDomain()
     {
         $history = [];
@@ -50,7 +53,7 @@ class ClientTest extends TestCase
         $request = $history[0]['request'];
         $this->assertEquals('GET', $request->getMethod());
         $this->assertStringStartsWith('https://clientgateway.cloudfile.jp/api/users/admin@example.com/shares', (string)$request->getUri());
-        $this->assertArraySubset(['Authorization' => ['Bearer token']], $request->getHeaders());
+        $this->assertEquals(['Bearer token'], $request->getHeader('Authorization'));
     }
 
     public function testGetUserSharesThrowsOnError()
@@ -84,7 +87,7 @@ class ClientTest extends TestCase
         $request = $history[0]['request'];
         $this->assertEquals('GET', $request->getMethod());
         $this->assertEquals('https://clientgateway.cloudfile.jp/api/shares/shareId/virtualfiles/internalName/children', $request->getUri());
-        $this->assertArraySubset(['Authorization' => ['Bearer token']], $request->getHeaders());
+        $this->assertEquals(['Bearer token'], $request->getHeader('Authorization'));
     }
 
     public function testGetDirectoryChildrenThrowsOnError()
@@ -217,9 +220,7 @@ class ClientTest extends TestCase
         $request = $history[1]['request'];
         $this->assertEquals('PUT', $request->getMethod());
         $this->assertEquals('https://filecache01.rushfiles.com/upload_url', (string)$request->getUri());
-        $this->assertArraySubset([
-            'Content-Range' => ['bytes 0-7/8'],
-        ], $request->getHeaders());
+        $this->assertEquals(['bytes 0-7/8'], $request->getHeader('Content-Range'));
         $this->assertEquals($request->getBody(), 'contents');
     }
 
