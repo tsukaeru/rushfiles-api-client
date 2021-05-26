@@ -70,6 +70,11 @@ class AuthToken {
         return $this->accessToken;
     }
 
+    public function getRefreshToken()
+    {
+        return $this->refreshToken;
+    }
+
     public function getUsername()
     {
         return $this->username;

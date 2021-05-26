@@ -329,6 +329,45 @@ class ClientTest extends TestCase
         $this->assertTrue($token->isRefreshable());
     }
 
+    public function testGetTokenThroughRefreshToken()
+    {
+        $history = [];
+        list($client, $mock) = $this->prepareClient($history);
+
+        $accessToken = 'header.' . base64_encode(json_encode([
+            'exp' => date_create("+5 min")->getTimestamp(),
+            'sub' => 'username',
+            'primary_domain' => 'example.com',
+        ])) . '.signature';
+
+        $mock->append(new Response(200, [], json_encode([
+            'access_token' => $accessToken,
+            'expires_in' => 300,
+            'token_type' => 'Bearer',
+            'refresh_token' => 'refresh',
+        ])));
+
+        $client->setClientId('client_id');
+        $client->setClientSecret('client_secret');
+
+        $token = $client->GetTokenThroughRefreshToken('refresh');
+
+        $request = $history[0]['request'];
+        $this->assertEquals('https://auth.rushfiles.com/connect/token', $request->getUri());
+        $this->assertEquals('Basic ' . base64_encode('client_id:client_secret'), $request->getHeader('Authorization')[0]);
+        $body = [];
+        $request->getBody()->rewind();
+        parse_str($request->getBody()->getContents(), $body);
+        $this->assertArraySubset([
+            'grant_type' => 'refresh_token',
+            'refresh_token' => 'refresh',
+        ], $body);
+
+        $this->assertEquals($accessToken, $token->getAccessToken());
+        $this->assertTrue($token->isValid());
+        $this->assertTrue($token->isRefreshable());
+    }
+
     private function prepareClient(array &$history = [])
     {
         $mock = new MockHandler();

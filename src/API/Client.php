@@ -322,6 +322,14 @@ class Client
         }
     }
 
+    public function GetTokenThroughRefreshToken($refreshToken)
+    {
+        return $this->GetAccessToken([
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $refreshToken,
+        ]);
+    }
+
     /**
      * @param string $username
      * @param Tsukaeru\RushFiles\API\AuthToken|string $token
@@ -662,16 +670,6 @@ class Client
     private function UserDomainURL($username)
     {
         return "https://global.rushfiles.com/getuserdomain.aspx?useremail=$username";
-    }
-
-    private function DomainTokensURL($domain)
-    {
-        return "https://clientgateway.$domain/api/domaintokens";
-    }
-
-    private function RegisterDeviceURL($domain, $deviceId)
-    {
-        return "https://clientgateway.$domain/api/devices/$deviceId";
     }
 
     private function UsersShareURL($domain, $username, $includeAssociations = false)
