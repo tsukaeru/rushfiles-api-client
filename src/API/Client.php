@@ -4,18 +4,14 @@ namespace Tsukaeru\RushFiles\API;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use function GuzzleHttp\json_decode;
 use Ramsey\Uuid\Uuid;
-use function GuzzleHttp\json_encode;
 use Tsukaeru\RushFiles\API\DTO\CreatePublicLink;
 use Tsukaeru\RushFiles\API\DTO\ClientJournal;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\API\DTO\EventReport;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
-use Psr\SimpleCache\CacheInterface;
-use Tightenco\Collect\Support\Arr;
-use Tsukaeru\RushFiles\User;
+use GuzzleHttp\Utils;
 use Tsukaeru\RushFiles\VirtualFile;
 
 class Client
@@ -62,12 +58,12 @@ class Client
     /**
      * @var GuzzleHttp\Client
      */
-    protected $client;
+    protected $httpClient;
 
     /**
      * @var string
      */
-    protected $issuer = 'https://auth.rushfiles.com';
+    protected $authority = 'https://auth.rushfiles.com';
 
     /**
      * @var string
@@ -112,13 +108,13 @@ class Client
         'Content-Type' => 'application/json',
     ];
 
-    public function __construct()
+    public function __construct(array $options = [])
     {
         $this->deviceOS = php_uname('s') . ' ' . php_uname('');
 
-        $this->client = new HttpClient([
-            'verify' => false,
-        ]);
+        $this->httpClient = new HttpClient();
+
+        $this->fillProperties($options);
     }
 
     /**
@@ -170,11 +166,11 @@ class Client
     }
 
     /**
-     * @param \GuzzleHttp\Client $client
+     * @param \GuzzleHttp\Client $httpClient
      */
-    public function setHttpClient(HttpClient $client)
+    public function setHttpClient(HttpClient $httpClient)
     {
-        $this->client = $client;
+        $this->httpClient = $httpClient;
 
         return $this;
     }
@@ -237,13 +233,13 @@ class Client
     }
 
     /**
-     * @param string $issuer URL of authority (without the path)
+     * @param string $authority URL of authority (without the path)
      * 
      * @return self
      */
-    public function setIssuer($issuer)
+    public function setAuthority($authority)
     {
-        $this->issuer = $issuer;
+        $this->authority = $authority;
 
         return $this;
     }
@@ -251,9 +247,9 @@ class Client
     /**
      * return string
      */
-    public function getIssuer()
+    public function getAuthority()
     {
-        return $this->issuer;
+        return $this->authority;
     }
 
     /**
@@ -265,7 +261,7 @@ class Client
     {
         try {
             $request = new Request('GET', $this->UserDomainURL($username));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve user's domain.");
         }
@@ -294,7 +290,7 @@ class Client
 
     public function GetAuthorizationCodeUrl()
     {
-        return $this->issuer . '/connect/authorize?' . http_build_query([
+        return $this->authority . '/connect/authorize?' . http_build_query([
             'client_id' => $this->getClientId(),
             'redirect_uri' => $this->getRedirectUrl(),
             'response_type' => 'code',
@@ -315,11 +311,11 @@ class Client
     private function GetAccessToken($requestData)
     {
         try {
-            $response = $this->client->post($this->TokenURL(), [
+            $response = $this->httpClient->post($this->TokenURL(), [
                 'auth' => [$this->getClientId(), $this->getClientSecret()],
                 'form_params' => $requestData,
             ]);
-            $tokenData = json_decode($response->getBody(), true);
+            $tokenData = Utils::jsonDecode($response->getBody(), true);
             return new AuthToken($tokenData);
         } catch (ClientException $exception) {
             
@@ -337,12 +333,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->UsersShareURL($domain, $username), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve user's shares.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         return $data['Data'];
     }
@@ -359,12 +355,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->DirectoryChildrenURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve directory children.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         return $data['Data'];
     }
@@ -381,12 +377,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->VirtualFileURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve data about virtual file.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         return VirtualFile::create($data['Data'], $domain, $token, $this);
     }
@@ -403,7 +399,7 @@ class Client
     {
         try {
             $request = new Request('GET', $this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
-            $response = $this->client->send($request, ['decode_content' => false]);
+            $response = $this->httpClient->send($request, ['decode_content' => false]);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not download file.");
         }
@@ -427,12 +423,12 @@ class Client
 
         try {
             $request = new Request('POST', $this->FilesURL($domain, $rfFile->getShareId()), $headers, $journal->getJSON());
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         if (isset($data['Data']['Url']) && $data['Data']['Url']) {
             $this->uploadFileContents($data['Data']['Url'], $token, $path);
@@ -476,13 +472,13 @@ class Client
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
         try {
-            $request = new Request('PUT', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
-            $response = $this->client->send($request);
+            $request = new Request('PUT', $this->FileURL($domain, $shareId, $internalName), $headers, Utils::jsonEncode($journal));
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         $uploadURL = $data['Data']['Url'];
 
@@ -510,8 +506,8 @@ class Client
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
         try {
-            $request = new Request('DELETE', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
-            $response = $this->client->send($request);
+            $request = new Request('DELETE', $this->FileURL($domain, $shareId, $internalName), $headers, Utils::jsonEncode($journal));
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not delete file.");
         }
@@ -529,12 +525,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->FilePublicLinksURL($domain, $shareId, $virtualFileId), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not get public links.");
         }
 
-        $body = json_decode($response->getBody(), true);
+        $body = Utils::jsonDecode($response->getBody(), true);
 
         return $body['Data'];
     }
@@ -552,12 +548,12 @@ class Client
 
         try {
             $request = new Request('POST', $this->PublicLinksURL($domain), $headers, $linkDto->getJSON());
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create public link.");
         }
 
-        $body = json_decode($response->getBody(), true);
+        $body = Utils::jsonDecode($response->getBody(), true);
 
         return $body['Data']['FullLink'];
     }
@@ -573,12 +569,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->PublicLinksURL($domain, $id), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve details on a public link.");
         }
 
-        $body = json_decode($response->getBody());
+        $body = Utils::jsonDecode($response->getBody());
 
         return $body['Data'];
     }
@@ -598,12 +594,12 @@ class Client
 
         try {
             $request = new Request('POST', $this->FileEventReportURL($domain, $shareId, $virtualFileId), $headers, $eventReport->getJSON());
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not get an event report.");
         }
 
-        $body = json_decode($response->getBody(), true);
+        $body = Utils::jsonDecode($response->getBody(), true);
 
         return $body['Data'];
     }
@@ -622,7 +618,7 @@ class Client
 
         try {
             $request = new Request('PUT', $url, $headers, fopen($path, 'r'));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
             if ($response->getStatusCode() !== 200 && $response->getStatusCode() !== 201) {
                 $this->throwException($response, "Error while uploading file content.");
             }
@@ -642,7 +638,7 @@ class Client
         $msg .= " HTTP Status Code: {$response->getStatusCode()}";
 
         if ($response->getBody()) {
-            $data = \json_decode($response->getBody(), true);
+            $data = json_decode($response->getBody(), true);
 
             if ($data !== false) {
                 if (isset($data['Message'])) $msg .= "\nMessage: " . $data['Message'];
@@ -720,6 +716,60 @@ class Client
 
     private function TokenURL()
     {
-        return $this->issuer . '/connect/token';
+        return $this->authority . '/connect/token';
+    }
+
+    /**
+     * The properties that aren't mass assignable.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @var array
+     */
+    protected $guarded = [
+        'defaultHeaders',
+    ];
+
+    /**
+     * Attempts to mass assign the given options to explicitly defined properties,
+     * skipping over any properties that are defined in the guarded array.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @param array $options
+     * @return mixed
+     */
+    protected function fillProperties(array $options = [])
+    {
+        if (isset($options['guarded'])) {
+            unset($options['guarded']);
+        }
+
+        foreach ($options as $option => $value) {
+            if (property_exists($this, $option) && !$this->isGuarded($option)) {
+                $this->{$option} = $value;
+            }
+        }
+    }
+
+    /**
+     * Returns current guarded properties.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @return array
+     */
+    public function getGuarded()
+    {
+        return $this->guarded;
+    }
+
+    /**
+     * Determines if the given property is guarded.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @param  string  $property
+     * @return bool
+     */
+    public function isGuarded($property)
+    {
+        return in_array($property, $this->getGuarded());
     }
 }

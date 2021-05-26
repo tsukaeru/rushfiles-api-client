@@ -228,7 +228,7 @@ class ClientTest extends TestCase
     {
         $client = new Client();
 
-        $client->setIssuer("https://auth.example.com");
+        $client->setAuthority("https://auth.example.com");
         $client->setClientId('ClientId');
         $client->setRedirectUrl('https://example.org');
 
