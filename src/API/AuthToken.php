@@ -28,16 +28,23 @@ class AuthToken {
      */
     private $username;
 
+    /**
+     * @var array
+     */
+    private $rawData;
+
     public function __construct($tokenData)
     {
-        $this->accessToken = $tokenData['access_token'];
-        $this->refreshToken = $tokenData['refresh_token'];
+        $this->rawData = $tokenData;
 
-        $this->decodeAccessToken();
+        $this->decodeTokenData();
     }
 
-    private function decodeAccessToken()
+    private function decodeTokenData()
     {
+        $this->accessToken = $this->rawData['access_token'];
+        $this->refreshToken = $this->rawData['refresh_token'];
+
         $payload = base64_decode(explode('.', $this->accessToken)[1]);
         $payload = json_decode($payload, true);
 
@@ -71,5 +78,15 @@ class AuthToken {
     public function getDomains()
     {
         return $this->domains;
+    }
+
+    public function __toString()
+    {
+        return (string)$this->accessToken;
+    }
+
+    public function toArray()
+    {
+        return $this->rawData;
     }
 }
