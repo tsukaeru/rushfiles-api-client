@@ -11,7 +11,9 @@ use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\API\DTO\EventReport;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Utils;
+use Tsukaeru\RushFiles\API\Exceptions\AuthorizationFailed;
 use Tsukaeru\RushFiles\VirtualFile;
 
 class Client
@@ -245,7 +247,7 @@ class Client
     }
 
     /**
-     * return string
+     * @return string
      */
     public function getAuthority()
     {
@@ -276,7 +278,12 @@ class Client
     }
 
     /**
+     * @param string $username
+     * @param string $password
      * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
      */
     public function GetTokenThroughResourceOwnerPasswordCredentials($username, $password)
     {
@@ -288,6 +295,9 @@ class Client
         ]);
     }
 
+    /**
+     * @return string
+     */
     public function GetAuthorizationCodeUrl()
     {
         return $this->authority . '/connect/authorize?' . http_build_query([
@@ -299,6 +309,13 @@ class Client
         ], "", "&", PHP_QUERY_RFC3986);
     }
 
+    /**
+     * @param string $code
+     * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
+     */
     public function GetTokenThroughAuthorizationCode($code)
     {
         return $this->GetAccessToken([
@@ -308,9 +325,17 @@ class Client
         ]);
     }
 
+    /**
+     * @param array $requestData
+     * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
+     */
     private function GetAccessToken($requestData)
     {
         try {
+            //throw new ClientException("foo", new Request("GET", "/foo"), new Response());
             $response = $this->httpClient->post($this->TokenURL(), [
                 'auth' => [$this->getClientId(), $this->getClientSecret()],
                 'form_params' => $requestData,
@@ -318,10 +343,19 @@ class Client
             $tokenData = Utils::jsonDecode($response->getBody(), true);
             return new AuthToken($tokenData);
         } catch (ClientException $exception) {
-            
+            throw new AuthorizationFailed("Authorization failed", $exception->getResponse()->getStatusCode(), $exception);
+        } catch (ServerException $exception) {
+            $this->throwException($exception->getResponse());
         }
     }
 
+    /**
+     * @param string $refreshToken
+     * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
+     */
     public function GetTokenThroughRefreshToken($refreshToken)
     {
         return $this->GetAccessToken([
