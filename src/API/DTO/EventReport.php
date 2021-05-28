@@ -2,7 +2,7 @@
 
 namespace Tsukaeru\RushFiles\API\DTO;
 
-use Illuminate\Support\Collection;
+use Tightenco\Collect\Support\Collection;
 
 class EventReport extends BaseDTO
 {
@@ -39,18 +39,18 @@ class EventReport extends BaseDTO
     }
 
     /**
-     * @return DateTime
+     * @return \DateTime
      */
     public function getFrom()
     {
-        return DateTime::createFromFormat(DATE_RFC3339_EXTENDED, $this->properties->get('From'));
+        return \DateTime::createFromFormat(DATE_RFC3339_EXTENDED, $this->properties->get('From'));
     }
 
     /**
-     * @return DateTime
+     * @return \DateTime
      */
     public function getTo()
     {
-        return DateTime::createFromFormat(DATE_RFC3339_EXTENDED, $this->properties->get('To'));
+        return \DateTime::createFromFormat(DATE_RFC3339_EXTENDED, $this->properties->get('To'));
     }
 }

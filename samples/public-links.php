@@ -2,19 +2,21 @@
 
 require_once "__DIR__/../vendor/autoload.php";
 
-use Tsukaeru\RushFiles\API\Client;
 use Tsukaeru\RushFiles\PublicLink;
+use Tsukaeru\RushFiles\User;
 
-// import $username, $password and $domain
-require_once "_auth_params.php";
+// import $authToken and $client
+require_once "generate-token.php";
 
-$client = new Client();
+$user = new User($authToken, $client);
 
-$user = $client->Login($username, $password);
-
+// for example purposes, skip checks and assume that first share will have at
+// least one directory and this directory will have at least one file. (fails
+// otherwise)
 $share = reset($user->getShares());
+var_dump($share->getFullPath());
 $dir = reset($share->getDirectories());
-$file = reset($dir->getFiles());
+$file = array_shift($dir->getFiles());
 
 /**
  * public links can be created for the directories in the same way

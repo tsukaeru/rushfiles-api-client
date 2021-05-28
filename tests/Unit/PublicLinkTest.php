@@ -23,6 +23,6 @@ class PublicLinkTest extends TestCase
 
         $linkStr = $file->createPublicLink(PublicLink::STRING);
 
-        $this->assertRegExp('/^https\:\/\/cloudfile\.jp\/client\/publiclink\.aspx\?id=[\w]{10}$/', $linkStr);
+        $this->assertMatchesRegularExpression('/^https\:\/\/cloudfile\.jp\/client\/publiclink\.aspx\?id=[\w]{10}$/', $linkStr);
     }
 }

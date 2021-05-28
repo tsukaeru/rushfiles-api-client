@@ -2,7 +2,7 @@
 
 namespace Tsukaeru\RushFiles\API\DTO;
 
-use Illuminate\Support\Collection;
+use Tightenco\Collect\Support\Collection;
 
 class CreatePublicLink extends BaseDTO
 {

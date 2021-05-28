@@ -3,7 +3,8 @@
 namespace Tsukaeru\RushFiles\API\DTO;
 
 use Ramsey\Uuid\Uuid;
-use Illuminate\Support\Collection;
+use Tightenco\Collect\Support\Collection;
+use InvalidArgumentException;
 
 class ClientJournal extends BaseDTO
 {
@@ -32,7 +33,7 @@ class ClientJournal extends BaseDTO
     public function __construct(RfVirtualFile $RfVirtualFile, $EventType, $DeviceId, $properties = [])
     {
         if ($EventType < 0 || $EventType > 14) {
-            throw new \InvalidArgument("EventType must be an enum between 0 and 14.");
+            throw new InvalidArgumentException("EventType must be an enum between 0 and 14.");
         }
 
         $this->properties = Collection::make([

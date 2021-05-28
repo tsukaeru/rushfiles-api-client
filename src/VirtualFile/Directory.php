@@ -2,8 +2,8 @@
 
 namespace Tsukaeru\RushFiles\VirtualFile;
 
+use Tightenco\Collect\Support\Collection;
 use Tsukaeru\RushFiles\VirtualFile;
-use Illuminate\Support\Collection;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\Exceptions\InvalidPath;
 
@@ -161,7 +161,7 @@ class Directory extends VirtualFile
         foreach ($this->getChildren($refresh) as $file) {
             if ($file->getName() == $child_name) {
                 if (empty($path)) return $file;
-                if ($file->isDirectory()) return $file->getChildByPath($path, $refresh);
+                if ($file instanceof Directory) return $file->getChildByPath($path, $refresh);
 
                 break;
             }

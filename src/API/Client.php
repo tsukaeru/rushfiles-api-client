@@ -4,18 +4,16 @@ namespace Tsukaeru\RushFiles\API;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use function GuzzleHttp\json_decode;
 use Ramsey\Uuid\Uuid;
-use function GuzzleHttp\json_encode;
 use Tsukaeru\RushFiles\API\DTO\CreatePublicLink;
 use Tsukaeru\RushFiles\API\DTO\ClientJournal;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\API\DTO\EventReport;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
-use Psr\SimpleCache\CacheInterface;
-use Tightenco\Collect\Support\Arr;
-use Tsukaeru\RushFiles\User;
+use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Utils;
+use Tsukaeru\RushFiles\API\Exceptions\AuthorizationFailed;
 use Tsukaeru\RushFiles\VirtualFile;
 
 class Client
@@ -46,10 +44,28 @@ class Client
         'MISSING_CREATE_EVENT' =>17,
     ];
 
+    const DEVICE_PC = 0;
+    const DEVICE_ANDROID_TABLET = 1;
+    const DEVICE_ANDROID_PHONE = 2;
+    const DEVICE_IPHONE = 3;
+    const DEVICE_IPAD = 4;
+    const DEVICE_IPAD_MINE = 5;
+    const DEVICE_WINDOWS_PHONE = 6;
+    const DEVICE_WINDOWS_TABLET = 7;
+    const DEVICE_UNKNOWN = 8;
+    const DEVICE_WEB_CLIENT = 9;
+    const DEVICE_MAC = 10;
+    const DEVICE_IPAD_MINI = 11;
+
     /**
      * @var GuzzleHttp\Client
      */
-    protected $client;
+    protected $httpClient;
+
+    /**
+     * @var string
+     */
+    protected $authority = 'https://auth.rushfiles.com';
 
     /**
      * @var string
@@ -62,6 +78,31 @@ class Client
     private $deviceOS;
 
     /**
+     * @var int
+     */
+    private $deviceType = self::DEVICE_UNKNOWN;
+
+    /**
+     * @var string
+     */
+    private $clientId;
+
+    /**
+     * @var string
+     */
+    private $clientSecret;
+
+    /**
+     * @var string
+     */
+    protected $redirectUrl;
+
+    /**
+     * @var array
+     */
+    protected $scopes = ['openid', 'profile', 'domain_api', 'offline_access'];
+
+    /**
      * @var array
      */
     private $defaultHeaders = [
@@ -69,11 +110,13 @@ class Client
         'Content-Type' => 'application/json',
     ];
 
-    public function __construct()
+    public function __construct(array $options = [])
     {
         $this->deviceOS = php_uname('s') . ' ' . php_uname('');
 
-        $this->client = new HttpClient();
+        $this->httpClient = new HttpClient();
+
+        $this->fillProperties($options);
     }
 
     /**
@@ -105,64 +148,110 @@ class Client
     }
 
     /**
-     * @param \GuzzleHttp\Client $client
+     * @param int $deviceType
+     * 
+     * @return self
      */
-    public function setHttpClient(HttpClient $client)
+    public function setDeviceType($deviceType)
     {
-        $this->client = $client;
+        $this->deviceType = $deviceType;
 
         return $this;
     }
 
     /**
-     * Automates getting user's domain, registering device and retrieving tokens,
-     * and packs everything into User object.
-     *
-     * @param string $username
-     * @param string $password
-     * @param string $domain
-     *
-     * @return User
+     * @return int
      */
-    public function Login($username, $password, $domain = null, CacheInterface $cache = null)
+    public function getDeviceType()
     {
-        $username = strtolower($username);
-        
-        /**
-         * User domain
-         */
-        if (!is_string($domain)) {
-            $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".domain";
-            
-            if ($cache) {
-                $domain = $cache->get($cacheKey);
-            }
+        return $this->deviceType;
+    }
 
-            if ($domain === null) {
-                $domain = $this->GetUserDomain($username);
+    /**
+     * @param \GuzzleHttp\Client $httpClient
+     */
+    public function setHttpClient(HttpClient $httpClient)
+    {
+        $this->httpClient = $httpClient;
 
-                if ($cache) {
-                    $cache->set($cacheKey, $domain);
-                }
-            }
-        }
-        
-        /**
-         * Device registration
-         */
-        $cacheKey = str_replace('-', '_', self::CLIENT_NAMESPACE_UUID) . "." . str_replace('@', '_', $username) . ".deviceId";
-        
-        if ($cache === null || $cache->get($cacheKey) != $this->getDeviceId()) {
-            $this->RegisterDevice($username, $password, $domain);
+        return $this;
+    }
 
-            if ($cache) {
-                $cache->set($cacheKey, $this->getDeviceId());
-            }
-        }
+    /**
+     * @param string $clientId
+     * 
+     * @return self
+     */
+    public function setClientId($clientId)
+    {
+        $this->clientId = $clientId;
 
-        $tokens = $this->GetDomainTokens($username, $password, $domain);
+        return $this;
+    }
 
-        return new User($username, $tokens, $this);
+    /**
+     * @return string
+     */
+    public function getClientId()
+    {
+        return $this->clientId;
+    }
+
+    /**
+     * @param string $clientSecret
+     * 
+     * @return self
+     */
+    public function setClientSecret($clientSecret)
+    {
+        $this->clientSecret = $clientSecret;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    private function getClientSecret()
+    {
+        return $this->clientSecret;
+    }
+
+    /**
+     * @param string $redirectUrl
+     * 
+     * @return self
+     */
+    public function setRedirectUrl($redirectUrl)
+    {
+        $this->redirectUrl = $redirectUrl;
+
+        return $this;
+    }
+
+    private function getRedirectUrl()
+    {
+        return $this->redirectUrl;
+    }
+
+    /**
+     * @param string $authority URL of authority (without the path)
+     * 
+     * @return self
+     */
+    public function setAuthority($authority)
+    {
+        $this->authority = $authority;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAuthority()
+    {
+        return $this->authority;
     }
 
     /**
@@ -174,7 +263,7 @@ class Client
     {
         try {
             $request = new Request('GET', $this->UserDomainURL($username));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve user's domain.");
         }
@@ -189,36 +278,95 @@ class Client
     }
 
     /**
-     * RegisterDevice must be called at least once for every username/deviceId combination.
-     * Subsequent calls won't cause errors so it can be called every time, or invocation
-     * can be remembered not to make needless calls.
-     * This client does not keep track of registration on itself.
-     *
      * @param string $username
      * @param string $password
-     * @param string $domain
+     * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
      */
-    public function RegisterDevice($username, $password, $domain)
+    public function GetTokenThroughResourceOwnerPasswordCredentials($username, $password)
     {
-        $deviceAssociation = [
-            'UserName' => $username,
-            'Password' => $password,
-            'DeviceName' => $this->deviceName,
-            'DeviceOs' => $this->deviceOS,
-            'DeviceType' => 8, // unknown
-        ];
+        return $this->GetAccessToken([
+            'grant_type' => 'password',
+            'username' => $username,
+            'password' => $password,
+            'scope' => implode(' ', $this->scopes),
+        ]);
+    }
 
+    /**
+     * @return string
+     */
+    public function GetAuthorizationCodeUrl()
+    {
+        return $this->authority . '/connect/authorize?' . http_build_query([
+            'client_id' => $this->getClientId(),
+            'redirect_uri' => $this->getRedirectUrl(),
+            'response_type' => 'code',
+            'scope' => implode(' ', $this->scopes),
+            'arc_values' => "deviceName:{$this->getDeviceName()} deviceOs:{$this->deviceOS} deviceType:{$this->getDeviceType()}",
+        ], "", "&", PHP_QUERY_RFC3986);
+    }
+
+    /**
+     * @param string $code
+     * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
+     */
+    public function GetTokenThroughAuthorizationCode($code)
+    {
+        return $this->GetAccessToken([
+            'grant_type' => 'authorization_code',
+            'code' => $code,
+            'redirect_uri' => $this->getRedirectURL(),
+        ]);
+    }
+
+    /**
+     * @param array $requestData
+     * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
+     */
+    private function GetAccessToken($requestData)
+    {
         try {
-            $request = new Request('PUT', $this->RegisterDeviceURL($domain, $this->getDeviceId()), $this->defaultHeaders, json_encode($deviceAssociation));
-            $this->client->send($request);
+            //throw new ClientException("foo", new Request("GET", "/foo"), new Response());
+            $response = $this->httpClient->post($this->TokenURL(), [
+                'auth' => [$this->getClientId(), $this->getClientSecret()],
+                'form_params' => $requestData,
+            ]);
+            $tokenData = Utils::jsonDecode($response->getBody(), true);
+            return new AuthToken($tokenData);
         } catch (ClientException $exception) {
-            $this->throwException($exception->getResponse(), "Could not register device.");
+            throw new AuthorizationFailed("Authorization failed", $exception->getResponse()->getStatusCode(), $exception);
+        } catch (ServerException $exception) {
+            $this->throwException($exception->getResponse());
         }
     }
 
     /**
+     * @param string $refreshToken
+     * 
+     * @return AuthToken
+     * 
+     * @throws AuthorizationFailed
+     */
+    public function GetTokenThroughRefreshToken($refreshToken)
+    {
+        return $this->GetAccessToken([
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $refreshToken,
+        ]);
+    }
+
+    /**
      * @param string $username
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      * @param string $domain
      *
      * @return array
@@ -227,12 +375,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->UsersShareURL($domain, $username), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve user's shares.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         return $data['Data'];
     }
@@ -241,7 +389,7 @@ class Client
      * @param string $shareId
      * @param string $internalName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -249,12 +397,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->DirectoryChildrenURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve directory children.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         return $data['Data'];
     }
@@ -263,7 +411,7 @@ class Client
      * @param string $shareId
      * @param string $internalName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return VirtualFile
      */
@@ -271,50 +419,21 @@ class Client
     {
         try {
             $request = new Request('GET', $this->VirtualFileURL($domain, $shareId, $internalName), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve data about virtual file.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         return VirtualFile::create($data['Data'], $domain, $token, $this);
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @param string $domain
-     *
-     * @return array
-     */
-    public function GetDomainTokens($username, $password, $domain)
-    {
-        $loginData = [
-            'UserName' => $username,
-            'Password' => $password,
-            'DeviceId' => $this->getDeviceId(),
-            'Longitude' => 0,
-            'Latitude' => 0,
-        ];
-
-        try {
-            $request = new Request('POST', $this->DomainTokensURL($domain), $this->defaultHeaders, json_encode($loginData));
-            $response = $this->client->send($request);
-        } catch (ClientException $exception) {
-            $this->throwException($exception->getResponse(), "Fail to retrieve domain's token.");
-        }
-
-        $body = json_decode($response->getBody(), true);
-
-        return $body['Data']['DomainTokens'];
     }
 
     /**
      * @param string $shareId
      * @param string $uploadName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return StreamInterface|string
      */
@@ -322,7 +441,7 @@ class Client
     {
         try {
             $request = new Request('GET', $this->FileURL($domain, $shareId, $uploadName), $this->AuthHeaders($token));
-            $response = $this->client->send($request, ['decode_content' => false]);
+            $response = $this->httpClient->send($request, ['decode_content' => false]);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not download file.");
         }
@@ -334,7 +453,7 @@ class Client
      * @param RfVirtualFile $rfFile
      * @param string $path Path to file/directory to be uploaded/created
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return VirtualFile
      */
@@ -346,12 +465,12 @@ class Client
 
         try {
             $request = new Request('POST', $this->FilesURL($domain, $rfFile->getShareId()), $headers, $journal->getJSON());
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         if (isset($data['Data']['Url']) && $data['Data']['Url']) {
             $this->uploadFileContents($data['Data']['Url'], $token, $path);
@@ -366,7 +485,7 @@ class Client
      * @param string $internalName
      * @param string $path Path to file/directory to be updated
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return VirtualFile
      */
@@ -395,13 +514,13 @@ class Client
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
         try {
-            $request = new Request('PUT', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
-            $response = $this->client->send($request);
+            $request = new Request('PUT', $this->FileURL($domain, $shareId, $internalName), $headers, Utils::jsonEncode($journal));
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
         }
 
-        $data = json_decode($response->getBody(), true);
+        $data = Utils::jsonDecode($response->getBody(), true);
 
         $uploadURL = $data['Data']['Url'];
 
@@ -416,7 +535,7 @@ class Client
      * @param string $shareId
      * @param string $internalName
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      */
     public function DeleteVirtualFile($shareId, $internalName, $domain, $token)
     {
@@ -429,8 +548,8 @@ class Client
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
         try {
-            $request = new Request('DELETE', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
-            $response = $this->client->send($request);
+            $request = new Request('DELETE', $this->FileURL($domain, $shareId, $internalName), $headers, Utils::jsonEncode($journal));
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not delete file.");
         }
@@ -440,7 +559,7 @@ class Client
      * @param string $shareId
      * @param string $virtualFileId
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -448,12 +567,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->FilePublicLinksURL($domain, $shareId, $virtualFileId), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not get public links.");
         }
 
-        $body = json_decode($response->getBody(), true);
+        $body = Utils::jsonDecode($response->getBody(), true);
 
         return $body['Data'];
     }
@@ -461,9 +580,9 @@ class Client
     /**
      * @param CreatePublicLink $linkDto
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
-     * @return array
+     * @return array|string
      */
     public function CreatePublicLink(CreatePublicLink $linkDto, $domain, $token)
     {
@@ -471,12 +590,12 @@ class Client
 
         try {
             $request = new Request('POST', $this->PublicLinksURL($domain), $headers, $linkDto->getJSON());
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create public link.");
         }
 
-        $body = json_decode($response->getBody(), true);
+        $body = Utils::jsonDecode($response->getBody(), true);
 
         return $body['Data']['FullLink'];
     }
@@ -484,7 +603,7 @@ class Client
     /**
      * @param string $id
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -492,12 +611,12 @@ class Client
     {
         try {
             $request = new Request('GET', $this->PublicLinksURL($domain, $id), $this->AuthHeaders($token));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not retrieve details on a public link.");
         }
 
-        $body = json_decode($response->getBody());
+        $body = Utils::jsonDecode($response->getBody());
 
         return $body['Data'];
     }
@@ -507,7 +626,7 @@ class Client
      * @param string $shareId
      * @param string $virtualFileId
      * @param string $domain
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      *
      * @return array
      */
@@ -517,19 +636,19 @@ class Client
 
         try {
             $request = new Request('POST', $this->FileEventReportURL($domain, $shareId, $virtualFileId), $headers, $eventReport->getJSON());
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not get an event report.");
         }
 
-        $body = json_decode($response->getBody(), true);
+        $body = Utils::jsonDecode($response->getBody(), true);
 
         return $body['Data'];
     }
 
     /**
      * @param string $url
-     * @param string $token
+     * @param Tsukaeru\RushFiles\API\AuthToken|string $token
      * @param string $path
      */
     private function uploadFileContents($url, $token, $path)
@@ -541,7 +660,7 @@ class Client
 
         try {
             $request = new Request('PUT', $url, $headers, fopen($path, 'r'));
-            $response = $this->client->send($request);
+            $response = $this->httpClient->send($request);
             if ($response->getStatusCode() !== 200 && $response->getStatusCode() !== 201) {
                 $this->throwException($response, "Error while uploading file content.");
             }
@@ -561,7 +680,7 @@ class Client
         $msg .= " HTTP Status Code: {$response->getStatusCode()}";
 
         if ($response->getBody()) {
-            $data = \json_decode($response->getBody(), true);
+            $data = json_decode($response->getBody(), true);
 
             if ($data !== false) {
                 if (isset($data['Message'])) $msg .= "\nMessage: " . $data['Message'];
@@ -573,28 +692,18 @@ class Client
     }
 
     /**
-     * @param string|Tsukaeru\RushFiles\API\User
+     * @param Tsukaeru\RushFiles\API\AuthToken|string
      */
     private function AuthHeaders($token)
     {
         return [
-            'Authorization' => 'DomainToken ' . (is_object($token) ? $token->getToken() : $token),
+            'Authorization' => 'Bearer ' . ($token instanceof AuthToken ? $token->getAccessToken() : $token),
         ];
     }
 
     private function UserDomainURL($username)
     {
         return "https://global.rushfiles.com/getuserdomain.aspx?useremail=$username";
-    }
-
-    private function DomainTokensURL($domain)
-    {
-        return "https://clientgateway.$domain/api/domaintokens";
-    }
-
-    private function RegisterDeviceURL($domain, $deviceId)
-    {
-        return "https://clientgateway.$domain/api/devices/$deviceId";
     }
 
     private function UsersShareURL($domain, $username, $includeAssociations = false)
@@ -635,5 +744,64 @@ class Client
     private function FileEventReportURL($domain, $shareId, $virtualFileId)
     {
         return "https://clientgateway.$domain/api/shares/$shareId/virtualfiles/$virtualFileId/eventreport";
+    }
+
+    private function TokenURL()
+    {
+        return $this->authority . '/connect/token';
+    }
+
+    /**
+     * The properties that aren't mass assignable.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @var array
+     */
+    protected $guarded = [
+        'defaultHeaders',
+    ];
+
+    /**
+     * Attempts to mass assign the given options to explicitly defined properties,
+     * skipping over any properties that are defined in the guarded array.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @param array $options
+     * @return mixed
+     */
+    protected function fillProperties(array $options = [])
+    {
+        if (isset($options['guarded'])) {
+            unset($options['guarded']);
+        }
+
+        foreach ($options as $option => $value) {
+            if (property_exists($this, $option) && !$this->isGuarded($option)) {
+                $this->{$option} = $value;
+            }
+        }
+    }
+
+    /**
+     * Returns current guarded properties.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @return array
+     */
+    public function getGuarded()
+    {
+        return $this->guarded;
+    }
+
+    /**
+     * Determines if the given property is guarded.
+     * @link https://github.com/thephpleague/oauth2-client GitHub
+     *
+     * @param  string  $property
+     * @return bool
+     */
+    public function isGuarded($property)
+    {
+        return in_array($property, $this->getGuarded());
     }
 }

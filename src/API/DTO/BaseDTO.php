@@ -24,7 +24,6 @@ class BaseDTO
                 return $item;
             }
         });
-        return $this->properties->all();
     }
 
     /**

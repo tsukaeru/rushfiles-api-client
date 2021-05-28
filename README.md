@@ -27,7 +27,28 @@ composer require tsukaeru/rushfiles-api-client
 
 ## Configuration
 
-API calls are done through the instance of `Tsukaeru\RushFiles\API\Client` which instead uses a Guzzle library for HTTP client. Default Guzzle client object is created automatically, but you can also pass your own instance for further customization.
+API calls are done through the instance of `Tsukaeru\RushFiles\API\Client`. It can be configured using setters or by passing configuration array to constructor.
+
+Configuration array in constructor:
+
+```php
+require_once "vendor/autoload.php";
+
+use Tsukaeru\RushFiles\API\Client;
+
+$httpClient = new GuzzleHttp\Client([
+    'verify' => false // e.g. turn off SSL certificates verification
+]);
+
+$client = new Client([
+    'clientId' => 'ClientID',
+    'clientSecret' => 'ClientSecret',
+    'deviceName' => 'MyLibrary',
+    'httpClient' => $httpClient,
+]);
+```
+
+Using setters:
 
 ```php
 require_once "vendor/autoload.php";
@@ -36,20 +57,83 @@ use Tsukaeru\RushFiles\API\Client;
 
 $client = new Client();
 
-/**
- * Optionally setting own guzzle instance
- */
 $httpClient = new GuzzleHttp\Client([
     'verify' => false // e.g. turn off SSL certificates verification
 ]);
 
 $client->setHttpClient($httpClient);
+$client->setDeviceName("MyLibrary");
+$client->setClientId("ClientID");
+$client->setClientSecret("ClientSecret");
 ```
 
-By default, `"tsukaeru/rushfiles-api-client@v0.1.0"` is used as a device name when connecting to Tsukaeru\RushFiles API. You can set your own name using `setDeviceName` method:
+Defaults are:
+```php
+[
+    'httpClient' => new GuzzleHttp\Client,
+    'authority' => 'https://auth.rushfiles.com',
+    'deviceName' => 'tsukaeru/rushfiles-api-client@v0.3.0',
+    'deviceOS' => php_uname('s') . ' ' . php_uname(''),
+    'deviceType' => Client::DEVICE_UNKNOWN,
+    'clientId' => '',
+    'clientSecret' => '',
+    'redirectUrl' => '',
+]
+```
+
+## Authentication
+
+Library supports authentication with OAuth Authorization Code and Resource Owner Password Credentials flows.
+
+Refer to RushFiles api documentation for details and differences between the flows: https://wiki.rushfiles.com/api/authorization
+
+### Authorization Code flow
+
+For Authorization Code flow, configure `clientId`, `clientSecret` and `redirectUrl` of the client. Redirect user to the URL returned from `GetAuthorizationCodeUrl()` and pass retuned authorization code to `GetTokenThroughAuthorizationCode()`.
 
 ```php
-$client->setDeviceName("MyLibrary");
+$client = new Client([
+    'clientId' => 'ClientID',
+    'clientSecret' => 'ClientSecret',
+    'redirectUrl' => 'https://exmaple.com/auth',
+]);
+
+$authUrl = $client->GetAuthorizationCodeUrl();
+// redirect user to $auth Url
+
+// ...
+
+// read authorization code from url parameter after user logs in to RushFiles and is redirected back to your wabsite
+$code = // ...
+$authToken = $client->GetTokenThroughAuthorizationCode($code);
+```
+
+### Resource Owner Password Credentials flow
+
+For Resource Owner Password Credentials flow, configure `clientId` and `clientSecret` of the client. Then call `GetTokenThroughResourceOwnerPasswordCredentials()` with username (email) and password.
+
+```php
+$client = new Client([
+    'clientId' => 'ClientID',
+    'clientSecret' => 'ClientSecret',
+]);
+
+$authToken = $client->GetTokenThroughResourceOwnerPasswordCredentials($code);
+```
+
+### Refreshing token
+
+A new access token can be requested with refresh token.
+
+```php
+$client = new Client([
+    'clientId' => 'ClientID',
+    'clientSecret' => 'ClientSecret',
+]);
+
+$oldAuthToken = // ...
+
+$newAuthToken = $client->GetTokenThroughRefreshToken($oldAuthToken->getRefreshToken());
 ```
 
 ## Usage
@@ -61,28 +145,13 @@ Library can be used to interact with RushFiles API either through `Tsukaeru\Rush
 For example, the following code gets information on all shares that user has access to using client's methods directly.
 
 ```php
-$username = "admin@example.com";
-$password = "qwerty";
+$authToken = // ...
 
-// get the main domain (RushFiles instance) where user is registered
-$domain = $client->GetUserDomain($username);
-
-/**
- * register device
- *   For every user, current host/device must be registered before interacting
- * with API. Subsequent calls are ignored, but interacting with API without
- * registering the device is undefined.
- */
-$client->RegisterDevice($username, $password, $domain);
-
-// get all domains and their tokens that user has shares on
-$tokens = $client->GetDomainTokens($username, $password, $domain);
-
-// get all shares from all domain
-foreach ($tokens as $token) {
-    $shares = $client->GetUserShares($username,
-                                     $token['DomainToken'],
-                                     $token['DomainUrl']);
+// get all shares from all domain accessible using the token
+foreach ($domain as $authToken->getDomains()) {
+    $shares = $client->GetUserShares($authToken->getUsername(),
+                                     $authToken,
+                                     $domain);
 
     foreach ($shares as $share) {
         print_r($share);
@@ -141,11 +210,14 @@ Array
 The following code gets information on all shares that user has access to using abstraction.
 
 ```php
+$client = new Client([
+    // ...
+]);
+$authToken = // ...
 /**
- * Login method detects user's domain, registers the device and returns
- * an initialized Tsukaeru\RushFiles\User instance.
+ * Create user instance from AuthToken
  */
-$user = $client->Login($username, $password);
+$user = new User($authToken, $client);
 
 /**
  * Retrieve data on all shares as a array of Tsukaeru\RushFiles\VirtualFile\Share

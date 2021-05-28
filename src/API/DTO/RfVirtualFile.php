@@ -3,7 +3,8 @@
 namespace Tsukaeru\RushFiles\API\DTO;
 
 use Ramsey\Uuid\Uuid;
-use Illuminate\Support\Collection;
+use Tightenco\Collect\Support\Collection;
+use InvalidArgumentException;
 
 class RfVirtualFile extends BaseDTO
 {
@@ -43,12 +44,12 @@ class RfVirtualFile extends BaseDTO
         }
 
         if (!is_array($file)) {
-            throw new \InvalidParameter("file parameter is neither an array nor path to en existing file.");
+            throw new InvalidArgumentException("file parameter is neither an array nor path to en existing file.");
         }
 
         $this->properties = Collection::make([
             'ShareId' => $shareId,
-            'ParrentId' => $parentId,
+            'ParrentId' => $parentId, // Typo in RushFiles API
             'InternalName' => Uuid::uuid1(),
         ])->merge($file);
     }
@@ -66,7 +67,7 @@ class RfVirtualFile extends BaseDTO
      */
     public function getParentId()
     {
-        return $this->properties->get('ParentId');
+        return $this->properties->get('ParrentId');
     }
 
     /**

@@ -5,14 +5,14 @@ use Tsukaeru\RushFiles\API\AuthToken;
 use Tsukaeru\RushFiles\API\Client;
 use Tsukaeru\RushFiles\User;
 
-class UserTest extends TestCase
+class AuthTokenTest extends TestCase
 {
     /**
      * @param string $username
      * @param array $domains Array of domains
      * @param DateTime $validUntil Defaults to 5min in the future is unspecified
      */
-    private function createAuthToken($username, $domains, $validUntil = null)
+    private function createAuthToken($username, $domains, $refreshable = true, $validUntil = null)
     {
         if ($validUntil === null) {
             $validUntil = (new DateTime("+5 minutes"));
@@ -29,16 +29,26 @@ class UserTest extends TestCase
 
         return new AuthToken([
             'access_token' => $accessToken,
+            'refresh_token' => $refreshable ? 'refresh' : null,
         ]);
     }
 
-    public function testGetToken()
+    public function testIsValid()
     {
-        $client = $this->createMock(Client::class);
-        $authToken = $this->createAuthToken('username', ['cloudfile.jp', 'rushfiles.com']);
-        $user = new User($authToken, $client);
+        $authToken = $this->createAuthToken('username', ['cloudfile.jp', 'rushfiles.com'], true, new DateTime("+5 minutes"));
+        $this->assertTrue($authToken->isValid());
 
-        $this->assertEquals($authToken->getAccessToken(), $user->getAccessToken());
+        $authToken = $this->createAuthToken('username', ['cloudfile.jp', 'rushfiles.com'], true, new DateTime("-5 minutes"));
+        $this->assertFalse($authToken->isValid());
+    }
+
+    public function testIsRefreshable()
+    {
+        $authToken = $this->createAuthToken('username', ['cloudfile.jp', 'rushfiles.com'], true);
+        $this->assertTrue($authToken->isRefreshable());
+
+        $authToken = $this->createAuthToken('username', ['cloudfile.jp', 'rushfiles.com'], false);
+        $this->assertFalse($authToken->isRefreshable());
     }
 
     public function testGetDomains()
