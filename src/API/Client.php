@@ -16,6 +16,8 @@ use GuzzleHttp\Utils;
 use Tsukaeru\RushFiles\API\Exceptions\AuthorizationFailed;
 use Tsukaeru\RushFiles\VirtualFile;
 
+use function GuzzleHttp\json_decode;
+
 class Client
 {
     /**
@@ -340,7 +342,7 @@ class Client
                 'auth' => [$this->getClientId(), $this->getClientSecret()],
                 'form_params' => $requestData,
             ]);
-            $tokenData = Utils::jsonDecode($response->getBody(), true);
+            $tokenData = json_decode($response->getBody(), true);
             return new AuthToken($tokenData);
         } catch (ClientException $exception) {
             throw new AuthorizationFailed("Authorization failed", $exception->getResponse()->getStatusCode(), $exception);
@@ -380,7 +382,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not retrieve user's shares.");
         }
 
-        $data = Utils::jsonDecode($response->getBody(), true);
+        $data = json_decode($response->getBody(), true);
 
         return $data['Data'];
     }
@@ -402,7 +404,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not retrieve directory children.");
         }
 
-        $data = Utils::jsonDecode($response->getBody(), true);
+        $data = json_decode($response->getBody(), true);
 
         return $data['Data'];
     }
@@ -424,7 +426,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not retrieve data about virtual file.");
         }
 
-        $data = Utils::jsonDecode($response->getBody(), true);
+        $data = json_decode($response->getBody(), true);
 
         return VirtualFile::create($data['Data'], $domain, $token, $this);
     }
@@ -470,7 +472,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
         }
 
-        $data = Utils::jsonDecode($response->getBody(), true);
+        $data = json_decode($response->getBody(), true);
 
         if (isset($data['Data']['Url']) && $data['Data']['Url']) {
             $this->uploadFileContents($data['Data']['Url'], $token, $path);
@@ -514,13 +516,13 @@ class Client
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
         try {
-            $request = new Request('PUT', $this->FileURL($domain, $shareId, $internalName), $headers, Utils::jsonEncode($journal));
+            $request = new Request('PUT', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
             $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not create a new virtual file.");
         }
 
-        $data = Utils::jsonDecode($response->getBody(), true);
+        $data = json_decode($response->getBody(), true);
 
         $uploadURL = $data['Data']['Url'];
 
@@ -548,7 +550,7 @@ class Client
         $headers = array_merge($this->defaultHeaders, $this->AuthHeaders($token));
 
         try {
-            $request = new Request('DELETE', $this->FileURL($domain, $shareId, $internalName), $headers, Utils::jsonEncode($journal));
+            $request = new Request('DELETE', $this->FileURL($domain, $shareId, $internalName), $headers, json_encode($journal));
             $response = $this->httpClient->send($request);
         } catch (ClientException $exception) {
             $this->throwException($exception->getResponse(), "Could not delete file.");
@@ -572,7 +574,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not get public links.");
         }
 
-        $body = Utils::jsonDecode($response->getBody(), true);
+        $body = json_decode($response->getBody(), true);
 
         return $body['Data'];
     }
@@ -595,7 +597,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not create public link.");
         }
 
-        $body = Utils::jsonDecode($response->getBody(), true);
+        $body = json_decode($response->getBody(), true);
 
         return $body['Data']['FullLink'];
     }
@@ -616,7 +618,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not retrieve details on a public link.");
         }
 
-        $body = Utils::jsonDecode($response->getBody());
+        $body = json_decode($response->getBody());
 
         return $body['Data'];
     }
@@ -641,7 +643,7 @@ class Client
             $this->throwException($exception->getResponse(), "Could not get an event report.");
         }
 
-        $body = Utils::jsonDecode($response->getBody(), true);
+        $body = json_decode($response->getBody(), true);
 
         return $body['Data'];
     }
@@ -680,7 +682,7 @@ class Client
         $msg .= " HTTP Status Code: {$response->getStatusCode()}";
 
         if ($response->getBody()) {
-            $data = json_decode($response->getBody(), true);
+            $data = \json_decode($response->getBody(), true);
 
             if ($data !== false) {
                 if (isset($data['Message'])) $msg .= "\nMessage: " . $data['Message'];

@@ -3,7 +3,7 @@
 namespace Tsukaeru\RushFiles\API\DTO;
 
 use Ramsey\Uuid\Uuid;
-use Tightenco\Collect\Support\Collection;
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 class ClientJournal extends BaseDTO

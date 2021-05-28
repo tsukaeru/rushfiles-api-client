@@ -2,8 +2,8 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Tightenco\Collect\Support\Collection;
-use Tightenco\Collect\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Arr;
 use Tsukaeru\RushFiles\VirtualFile\File;
 use Tsukaeru\RushFiles\VirtualFile\Directory;
 use Tsukaeru\RushFiles\VirtualFile\Share;

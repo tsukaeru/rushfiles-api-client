@@ -2,7 +2,7 @@
 
 namespace Tsukaeru\RushFiles\VirtualFile;
 
-use Tightenco\Collect\Support\Collection;
+use Illuminate\Support\Collection;
 use Tsukaeru\RushFiles\VirtualFile;
 use Tsukaeru\RushFiles\API\DTO\RfVirtualFile;
 use Tsukaeru\RushFiles\Exceptions\InvalidPath;

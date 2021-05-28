@@ -2,7 +2,7 @@
 
 namespace Tsukaeru\RushFiles\API\DTO;
 
-use Tightenco\Collect\Support\Collection;
+use Illuminate\Support\Collection;
 
 class EventReport extends BaseDTO
 {

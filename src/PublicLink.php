@@ -2,7 +2,7 @@
 
 namespace Tsukaeru\RushFiles;
 
-use Tightenco\Collect\Support\Collection;
+use Illuminate\Support\Collection;
 
 class PublicLink
 {
@@ -10,7 +10,7 @@ class PublicLink
     const OBJECT = 'object';
 
     /**
-     * @var Tightenco\Collect\Support\Collection
+     * @var Illuminate\Support\Collection
      */
     protected $properties;
 

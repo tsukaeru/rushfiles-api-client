@@ -205,7 +205,7 @@ class VirtualFileTest extends TestCase
         $this->assertEquals($expected['InternalName'], $file->getInternalName());
         $this->assertEquals($expected['ShareId'], $file->getShareId());
         $this->assertEquals($expected['Tick'], $file->getTick());
-        $this->assertEquals($expected['Name'] ?? $expected['PublicName'], $file->getName());
+        $this->assertEquals($expected['Name'] ? $expected['Name'] : $expected['PublicName'], $file->getName());
     }
 
     public function testThrowOnUnknownPropertiesArray()
