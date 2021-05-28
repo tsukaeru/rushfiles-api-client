@@ -2,15 +2,13 @@
 
 require_once __DIR__ . "/../vendor/autoload.php";
 
-use Tsukaeru\RushFiles\API\Client;
+use Tsukaeru\RushFiles\User;
 use Tsukaeru\RushFiles\VirtualFile\Directory;
 
-// import $username, $password and $domain
-require_once "_auth_params.php";
+// import $authToken and $client
+require_once "generate-token.php";
 
-$client = new Client();
-
-$user = $client->Login($username, $password);
+$user = new User($tokenRecovered, $client);
 
 function parse_dir(Directory $directory, $level = 0)
 {

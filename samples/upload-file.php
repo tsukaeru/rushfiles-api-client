@@ -2,19 +2,17 @@
 
 require_once __DIR__ . "/../vendor/autoload.php";
 
-use Tsukaeru\RushFiles\API\Client;
+use Tsukaeru\RushFiles\User;
 
-// import $username, $password and $domain
-require_once "_auth_params.php";
+// import $authToken and $client
+require_once "generate-token.php";
 
 $path = "test.txt";
 
 // create file to upload
 file_put_contents($path, "contents");
 
-$client = new Client();
-
-$user = $client->Login($username, $password);
+$user = new User($authToken, $client);
 
 $shares = $user->getShares();
 $share = array_pop($shares);

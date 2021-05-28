@@ -2,16 +2,14 @@
 
 require_once "__DIR__/../vendor/autoload.php";
 
-use Tsukaeru\RushFiles\API\Client;
+use Tsukaeru\RushFiles\User;
 use Tsukaeru\RushFiles\VirtualFile;
 use Tsukaeru\RushFiles\VirtualFile\File;
 
-// import $username, $password and $domain
-require_once "_auth_params.php";
+// import $authToken and $client
+require_once "generate-token.php";
 
-$client = new Client();
-
-$user = $client->Login($username, $password);
+$user = new User($authToken, $client);
 
 $share = reset($user->getShares());
 $dir = reset($share->getDirectories());
