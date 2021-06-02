@@ -103,7 +103,7 @@ $authUrl = $client->GetAuthorizationCodeUrl();
 
 // ...
 
-// read authorization code from url parameter after user logs in to RushFiles and is redirected back to your wabsite
+// read authorization code from url parameter after user logs in to RushFiles and is redirected back to your website
 $code = // ...
 $authToken = $client->GetTokenThroughAuthorizationCode($code);
 ```
@@ -118,7 +118,7 @@ $client = new Client([
     'clientSecret' => 'ClientSecret',
 ]);
 
-$authToken = $client->GetTokenThroughResourceOwnerPasswordCredentials($code);
+$authToken = $client->GetTokenThroughResourceOwnerPasswordCredentials('admin@example.com', 'password');
 ```
 
 ### Refreshing token
