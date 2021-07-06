@@ -247,6 +247,27 @@ class ClientTest extends TestCase
         ], $query);
     }
 
+    public function testGetAuthorizationCodeUrlWithState()
+    {
+        $client = new Client();
+
+        $client->setAuthority("https://auth.example.com");
+        $client->setClientId('ClientId');
+        $client->setRedirectUrl('https://example.org');
+
+        $url = $client->GetAuthorizationCodeUrl('foo=bar');
+
+        $query = [];
+        parse_str(parse_url($url, PHP_URL_QUERY), $query);
+        $this->assertArraySubset([
+            'client_id' => 'ClientId',
+            'redirect_uri' => 'https://example.org',
+            'response_type' => 'code',
+            'scope' => 'openid profile domain_api offline_access',
+            'state' => 'foo=bar',
+        ], $query);
+    }
+
     public function testGetTokenThroughAuthorizationCode()
     {
         $history = [];

@@ -12,7 +12,6 @@ use Tsukaeru\RushFiles\API\DTO\EventReport;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
-use GuzzleHttp\Utils;
 use Tsukaeru\RushFiles\API\Exceptions\AuthorizationFailed;
 use Tsukaeru\RushFiles\VirtualFile;
 
@@ -300,7 +299,7 @@ class Client
     /**
      * @return string
      */
-    public function GetAuthorizationCodeUrl()
+    public function GetAuthorizationCodeUrl($state = null)
     {
         return $this->authority . '/connect/authorize?' . http_build_query([
             'client_id' => $this->getClientId(),
@@ -308,6 +307,7 @@ class Client
             'response_type' => 'code',
             'scope' => implode(' ', $this->scopes),
             'arc_values' => "deviceName:{$this->getDeviceName()} deviceOs:{$this->deviceOS} deviceType:{$this->getDeviceType()}",
+            'state' => (string)$state,
         ], "", "&", PHP_QUERY_RFC3986);
     }
 
@@ -337,7 +337,6 @@ class Client
     private function GetAccessToken($requestData)
     {
         try {
-            //throw new ClientException("foo", new Request("GET", "/foo"), new Response());
             $response = $this->httpClient->post($this->TokenURL(), [
                 'auth' => [$this->getClientId(), $this->getClientSecret()],
                 'form_params' => $requestData,
