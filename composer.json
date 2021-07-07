@@ -22,7 +22,7 @@
     },
     "scripts": {
         "test": [
-            "phpunit --configuration phpunit.xml --bootstrap vendor/autoload.php"
+            "./test.sh"
         ]
     }
 }

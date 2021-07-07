@@ -239,3 +239,11 @@ Internal Name: 02a8d989567e4c4c8085637c7aa24569
 ```
 
 * For more examples of using the abstraction layer, please refer to the [samples](samples).
+
+# Development
+
+## Testing
+
+Package can be automatically tested against multiple PHP versions (requires bash and docker). Run `composer test` for testing against latest PHP version or `composer test -- -a` to test against all supported versions.
+
+In the background it runs `test.sh` script (can be also run directly). Run `./test.sh -h` for details usage description.
