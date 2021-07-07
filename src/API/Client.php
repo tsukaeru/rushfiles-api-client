@@ -53,7 +53,7 @@ class Client
     const DEVICE_IPAD_MINE = 5;
     const DEVICE_WINDOWS_PHONE = 6;
     const DEVICE_WINDOWS_TABLET = 7;
-    const DEVICE_UNKNOWN = 8;
+    const DEVICE_UNKNOWN = 8; // not allowed when using Authorization Code
     const DEVICE_WEB_CLIENT = 9;
     const DEVICE_MAC = 10;
     const DEVICE_IPAD_MINI = 11;
@@ -306,9 +306,9 @@ class Client
             'redirect_uri' => $this->getRedirectUrl(),
             'response_type' => 'code',
             'scope' => implode(' ', $this->scopes),
-            'arc_values' => "deviceName:{$this->getDeviceName()} deviceOs:{$this->deviceOS} deviceType:{$this->getDeviceType()}",
+            'acr_values' => "deviceName:{$this->getDeviceName()} deviceOs:{$this->deviceOS} deviceType:". self::DEVICE_WEB_CLIENT,
             'state' => (string)$state,
-        ], "", "&", PHP_QUERY_RFC3986);
+        ], "", "&", PHP_QUERY_RFC1738);
     }
 
     /**
