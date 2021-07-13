@@ -81,7 +81,7 @@ class Client
     /**
      * @var int
      */
-    private $deviceType = self::DEVICE_UNKNOWN;
+    private $deviceType = self::DEVICE_WEB_CLIENT; // set web client as unknown is not allowed when using Authorization Code
 
     /**
      * @var string
@@ -306,7 +306,7 @@ class Client
             'redirect_uri' => $this->getRedirectUrl(),
             'response_type' => 'code',
             'scope' => implode(' ', $this->scopes),
-            'acr_values' => "deviceName:{$this->getDeviceName()} deviceOs:{$this->deviceOS} deviceType:". self::DEVICE_WEB_CLIENT,
+            'acr_values' => "deviceName:{$this->getDeviceName()} deviceOs:{$this->deviceOS} deviceType:{$this->getDeviceType()}",
             'state' => (string)$state,
         ], "", "&", PHP_QUERY_RFC1738);
     }

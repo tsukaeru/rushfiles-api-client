@@ -247,6 +247,34 @@ class ClientTest extends TestCase
         ], $query);
     }
 
+    public function testGetAuthorizationCodeUrlDefaultAcr()
+    {
+        $client = new Client();
+
+        $url = $client->GetAuthorizationCodeUrl();
+
+        $query = [];
+        parse_str(parse_url($url, PHP_URL_QUERY), $query);
+        $this->assertArrayHasKey('acr_values', $query);
+        $this->assertEquals("deviceName:tsukaeru/rushfiles-api-client@v0.1.0 deviceOs:".php_uname('s') . ' ' . php_uname('')." deviceType:9", $query['acr_values']);
+    }
+
+    public function testGetAuthorizationCodeUrlAcr()
+    {
+        $client = new Client([
+            'deviceName' => 'name',
+            'deviceOS' => 'os',
+            'deviceType' => Client::DEVICE_IPAD,
+        ]);
+
+        $url = $client->GetAuthorizationCodeUrl();
+
+        $query = [];
+        parse_str(parse_url($url, PHP_URL_QUERY), $query);
+        $this->assertArrayHasKey('acr_values', $query);
+        $this->assertEquals("deviceName:name deviceOs:os deviceType:".Client::DEVICE_IPAD, $query['acr_values']);
+    }
+
     public function testGetAuthorizationCodeUrlWithState()
     {
         $client = new Client();
