@@ -71,7 +71,7 @@ class Client
     /**
      * @var string
      */
-    protected $deviceName = 'tsukaeru/rushfiles-api-client@v0.1.0';
+    protected $deviceName = 'tsukaeru/rushfiles-api-client@v0.3.0';
 
     /**
      * @var string

@@ -166,7 +166,7 @@ class ClientTest extends TestCase
     {
         $client = new Client;
 
-        $this->assertEquals('tsukaeru/rushfiles-api-client@v0.1.0', $client->getDeviceName());
+        $this->assertEquals('tsukaeru/rushfiles-api-client@v0.3.0', $client->getDeviceName());
 
         $client->setDeviceName('TestName');
 
@@ -214,7 +214,7 @@ class ClientTest extends TestCase
                 'ParrentId' => 'parent-id',
             ],
             'ClientJournalEventType' => ClientJournal::CREATE,
-            'DeviceId' => 'd51b8f6c-3f0e-5f6e-9c93-58763a47185d',
+            'DeviceId' => '6c25e4ec-5efd-5c6e-bb48-7a0e502ea61f',
         ], json_decode($request->getBody()->getContents(), true));
 
         $request = $history[1]['request'];
@@ -256,7 +256,7 @@ class ClientTest extends TestCase
         $query = [];
         parse_str(parse_url($url, PHP_URL_QUERY), $query);
         $this->assertArrayHasKey('acr_values', $query);
-        $this->assertEquals("deviceName:tsukaeru/rushfiles-api-client@v0.1.0 deviceOs:".php_uname('s') . ' ' . php_uname('')." deviceType:9", $query['acr_values']);
+        $this->assertEquals("deviceName:tsukaeru/rushfiles-api-client@v0.3.0 deviceOs:".php_uname('s') . ' ' . php_uname('')." deviceType:9", $query['acr_values']);
     }
 
     public function testGetAuthorizationCodeUrlAcr()
