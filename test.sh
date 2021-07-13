@@ -48,6 +48,9 @@ if [ ${#php_versions[@]} -eq 0 ]; then
     php_versions=("8.0")
 fi
 
+COMPOSER_CONFIG="${COMPOSER_HOME:-$HOME/.composer}/config.json"
+COMPSOER_CONFIG_BACKUP="${COMPOSER_CONFIG}.bak"
+
 failed=()
 for version in "${php_versions[@]}"
 do
@@ -56,11 +59,15 @@ do
 
     rm -f composer.lock
 
+    mv $COMPOSER_CONFIG $COMPSOER_CONFIG_BACKUP
+
     # install dependencies for this version
     echo "Installing dependencies for PHP versions $version..."
-    docker run --rm -v ${PWD}:/app composer /bin/bash -c "composer config -g platform.php ${version} && composer install" > /dev/null 2>&1
+    docker run --rm -v ${PWD}:/app -v ${COMPOSER_HOME:-$HOME/.composer}:/tmp --user $(id -u):$(id -g) composer /bin/bash -c "composer config -g platform.php ${version} && composer install"
     # run tests for this version
     docker run -v ${PWD}:/app -w /app php:${version}-alpine ./vendor/phpunit/phpunit/phpunit
+
+    mv $COMPSOER_CONFIG_BACKUP $COMPOSER_CONFIG
 
     if [ $? -ne 0 ]; then
         failed+=("$version")
