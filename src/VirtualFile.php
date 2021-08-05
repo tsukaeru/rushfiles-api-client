@@ -165,6 +165,14 @@ abstract class VirtualFile
         return $this->parent;
     }
 
+    /**
+     * @return string
+     */
+    public function getDomain()
+    {
+        return $this->domain;
+    }
+
     public function delete()
     {
         $this->client->DeleteVirtualFile($this->getShareId(), $this->getInternalName(), $this->domain, $this->token);
