@@ -51,7 +51,10 @@ class AuthToken {
         // TODO: add checks
 
         $this->validUntil = new \DateTime("@{$payload['exp']}");
-        $this->domains = array_merge([$payload['primary_domain']], (array)$payload['domains']);
+        $this->domains = [$payload['primary_domain']];
+        if (array_key_exists('domains', $payload)) {
+            $this->domains = array_merge($this->domains, (array)$payload['domains']);
+        }
         $this->username = $payload['sub'];
     }
 
