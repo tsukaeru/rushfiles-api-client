@@ -1,7 +1,7 @@
 #!/bin/bash
 
 declare -A php_patch_versions
-php_patch_versions=(["5.6"]="5.6.40" ["7.0"]="7.0.33" ["7.1"]="7.1.33" ["7.2"]="7.2.34" ["7.3"]="7.3.29" ["7.4"]="7.4.21" ["8.0"]="8.0.8")
+php_patch_versions=(["5.6"]="5.6.40" ["7.0"]="7.0.33" ["7.1"]="7.1.33" ["7.2"]="7.2.34" ["7.3"]="7.3.33" ["7.4"]="7.4.33" ["8.0"]="8.0.26" ["8.1"]="8.1.13" ["8.2"]="8.2.0")
 
 help() {
     cat << EndOfHelp
@@ -63,9 +63,9 @@ do
 
     # install dependencies for this version
     echo "Installing dependencies for PHP versions $version..."
-    docker run --rm -v ${PWD}:/app -v ${COMPOSER_HOME:-$HOME/.composer}:/tmp --user $(id -u):$(id -g) composer /bin/bash -c "composer config -g platform.php ${version} && composer install"
+    docker run --rm -it -v ${PWD}:/app -v ${COMPOSER_HOME:-$HOME/.composer}:/tmp --user $(id -u):$(id -g) composer:lts /bin/bash -c "composer config -g platform.php ${version} && composer install" > /dev/null
     # run tests for this version
-    docker run -v ${PWD}:/app -w /app php:${version}-alpine ./vendor/phpunit/phpunit/phpunit
+    docker run --rm -v ${PWD}:/app -w /app php:${version}-alpine ./vendor/phpunit/phpunit/phpunit
 
     mv $COMPSOER_CONFIG_BACKUP $COMPOSER_CONFIG
 
