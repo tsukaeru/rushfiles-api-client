@@ -1,8 +1,5 @@
 #!/bin/bash
 
-declare -A php_patch_versions
-php_patch_versions=(["5.6"]="5.6.40" ["7.0"]="7.0.33" ["7.1"]="7.1.33" ["7.2"]="7.2.34" ["7.3"]="7.3.33" ["7.4"]="7.4.33" ["8.0"]="8.0.26" ["8.1"]="8.1.13" ["8.2"]="8.2.0")
-
 help() {
     cat << EndOfHelp
 This script automatically runs PHPUnit tests for different PHP versions.
@@ -29,7 +26,7 @@ while [[ $# -gt 0 ]]; do
 
   case $key in
     -a|--all)
-      php_versions+=("5.6" "7.0" "7.1" "7.2" "7.3" "7.4" "8.0")
+      php_versions+=("7.3" "7.4" "8.0" "8.1" "8.2")
       shift # past argument
       ;;
     -v|--version)
@@ -45,7 +42,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ ${#php_versions[@]} -eq 0 ]; then
-    php_versions=("8.0")
+    php_versions=("8.2")
 fi
 
 COMPOSER_CONFIG="${COMPOSER_HOME:-$HOME/.composer}/config.json"
@@ -54,9 +51,6 @@ COMPSOER_CONFIG_BACKUP="${COMPOSER_CONFIG}.bak"
 failed=()
 for version in "${php_versions[@]}"
 do
-    # Normalize PHP version
-    version="${php_patch_versions[$version]:-$version}"
-
     rm -f composer.lock
 
     mv $COMPOSER_CONFIG $COMPSOER_CONFIG_BACKUP
