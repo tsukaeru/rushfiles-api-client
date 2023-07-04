@@ -2,7 +2,7 @@
 
 ## Requirements
 
-* PHP 5.6+
+* PHP 7.3+
 
 ## Installation
 
@@ -36,15 +36,10 @@ require_once "vendor/autoload.php";
 
 use Tsukaeru\RushFiles\API\Client;
 
-$httpClient = new GuzzleHttp\Client([
-    'verify' => false // e.g. turn off SSL certificates verification
-]);
-
 $client = new Client([
     'clientId' => 'ClientID',
     'clientSecret' => 'ClientSecret',
     'deviceName' => 'MyLibrary',
-    'httpClient' => $httpClient,
 ]);
 ```
 
@@ -57,11 +52,6 @@ use Tsukaeru\RushFiles\API\Client;
 
 $client = new Client();
 
-$httpClient = new GuzzleHttp\Client([
-    'verify' => false // e.g. turn off SSL certificates verification
-]);
-
-$client->setHttpClient($httpClient);
 $client->setDeviceName("MyLibrary");
 $client->setClientId("ClientID");
 $client->setClientSecret("ClientSecret");
@@ -95,7 +85,7 @@ For Authorization Code flow, configure `clientId`, `clientSecret` and `redirectU
 $client = new Client([
     'clientId' => 'ClientID',
     'clientSecret' => 'ClientSecret',
-    'redirectUrl' => 'https://exmaple.com/auth',
+    'redirectUrl' => 'https://example.com/auth',
 ]);
 
 $authUrl = $client->GetAuthorizationCodeUrl();
@@ -236,6 +226,8 @@ Exemplary output:
 ```
 Name:          jsmith - Home folder
 Internal Name: 02a8d989567e4c4c8085637c7aa24569
+
+...
 ```
 
 * For more examples of using the abstraction layer, please refer to the [samples](samples).

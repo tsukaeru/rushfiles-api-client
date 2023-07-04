@@ -13,12 +13,18 @@ $client = new Client([
     'clientId' => $clientId,
     'clientSecret' => $clientSecret,
     'redirectUrl' => $redirectUrl,
+    'authority' => $authority,
 ]);
 
-$tokenFileName = dirname(__FILE__) . "/${clientId}_token.json";
+$tokenFileName = dirname(__FILE__) . "/{$clientId}_token.json";
 
 if (file_exists($tokenFileName)) {
     $authToken = new AuthToken(json_decode(file_get_contents($tokenFileName), true));
+    if (!$authToken->isValid()) {
+        $authToken = $client->GetTokenThroughRefreshToken($authToken->getRefreshToken());
+        
+        file_put_contents($tokenFileName, json_encode($authToken->toArray()));
+    }
 } else {
     try {
         if ($grant == "password") {

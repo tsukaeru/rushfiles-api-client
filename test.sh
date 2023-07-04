@@ -13,10 +13,6 @@ Options:
 
 	-h|--help       display this help message
 
-Note:
-	If patch version is omitted, latest (as of writing this help message) patch will be automatically used. E.g.
-		./test.sh -v 7.3
-	will run tests against PHP versions 7.3.29.
 EndOfHelp
 }
 
@@ -42,7 +38,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ ${#php_versions[@]} -eq 0 ]; then
-    php_versions=("8.2")
+    php_versions=("latest")
 fi
 
 COMPOSER_CONFIG="${COMPOSER_HOME:-$HOME/.composer}/config.json"
@@ -56,26 +52,33 @@ do
     mv $COMPOSER_CONFIG $COMPSOER_CONFIG_BACKUP
 
     # install dependencies for this version
-    echo "Installing dependencies for PHP versions $version..."
-    docker run --rm -it -v ${PWD}:/app -v ${COMPOSER_HOME:-$HOME/.composer}:/tmp --user $(id -u):$(id -g) composer:lts /bin/bash -c "composer config -g platform.php ${version} && composer install" > /dev/null
+    echo "Installing dependencies for PHP version: $version..."
+    docker run --rm -t -v ${PWD}:/app -v ${COMPOSER_HOME:-$HOME/.composer}:/tmp --user $(id -u):$(id -g) composer:lts /bin/bash -c "composer config -g platform.php ${version} && composer install" > /dev/null
     # run tests for this version
-    docker run --rm -v ${PWD}:/app -w /app php:${version}-alpine ./vendor/phpunit/phpunit/phpunit
-
-    mv $COMPSOER_CONFIG_BACKUP $COMPOSER_CONFIG
+    tag=$([ "$version" != "latest" ] && echo "$version-alpine" || echo "alpine")
+    docker run -t --rm -v ${PWD}:/app -w /app php:${tag} ./vendor/phpunit/phpunit/phpunit
 
     if [ $? -ne 0 ]; then
         failed+=("$version")
     fi
+
+    mv $COMPSOER_CONFIG_BACKUP $COMPOSER_CONFIG
+
+    echo ""
 done
 
+Red='\033[0;31m'          # Red
+Green='\033[0;32m'        # Green
+Reset='\033[0m'           # No Color
+
 if [ ${#failed[@]} -ne 0 ]; then
-    echo "Tests have failed for PHP versions:"
+    echo -e "${Red}Tests have failed for PHP versions:${Reset}"
     for version in "${failed[@]}"
     do
         echo -e "\t$version"
     done
     exit 1
 else
-    echo "All tests have passed"
+    echo -e "${Green}All tests have passed${Reset}"
     exit 0
 fi

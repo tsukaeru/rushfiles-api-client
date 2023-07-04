@@ -5,3 +5,4 @@ clientgateway.json
 filecache01.json
 /samples/*_token.json
 composer.lock
+.history
